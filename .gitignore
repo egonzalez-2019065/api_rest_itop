@@ -1,0 +1,5 @@
+# Ignorar el entorno
+env
+
+# Ingnora las variables de entorno
+.env
