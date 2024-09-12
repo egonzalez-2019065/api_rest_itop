@@ -3,3 +3,8 @@ env
 
 # Ingnora las variables de entorno
 .env
+
+# Ignora los archivos de ejecución 
+__pycache__
+
+
