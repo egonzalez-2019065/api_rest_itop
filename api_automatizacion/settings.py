@@ -145,9 +145,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(seconds=30), 
-    'REFRESH_TOKEN_LIFETIME': timedelta(seconds=30),  
-    'BLACKLIST_AFTER_ROTATION': True,
-    'USE_BLACKLIST': True,
+    'REFRESH_TOKEN_LIFETIME': timedelta(secconds=0),  
+    'BLACKLIST_AFTER_ROTATION': False,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
