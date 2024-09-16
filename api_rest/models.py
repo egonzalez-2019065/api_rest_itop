@@ -45,7 +45,9 @@ class HistorialComputer(models.Model):
     move2production = models.DateField(blank=True, null=True)
     purchase_date = models.DateField(blank=True, null=True)
     end_of_warranty = models.DateField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 
 
 class SerialAndIDItop(models.Model):
