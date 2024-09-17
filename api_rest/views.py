@@ -60,14 +60,14 @@ class ComputerViewSet(APIView):
                 serializer.save()
 
                 self._blacklist_token(token)
-                return Response({"message": "Actualizado correctamente", "data": serializer.data})
+                return Response({"message": "Actualizado correctamente", "data": serializer.data}, 200)
 
             except Computer.DoesNotExist:
                 serializer = ComputerSerializer(data=request.data)
                 if serializer.is_valid(): 
                     serializer.save()
                     self._blacklist_token(token)
-                    return Response({"message": f"Equipo creado exitosamente {serializer.data}"})
+                    return Response({"message": f"Equipo creado exitosamente {serializer.data}"}, 201)
                 return Response(serializer.errors, status=400)
 
             except Exception as e:
@@ -100,8 +100,12 @@ class CostumTokenObtainPairView(TokenObtainPairView):
 
 class ItopPeticionView(APIView):
     def post(self, request):
-        # Obtener ambas tablas para realizar la comparación
+        # Obtener todas las computadoras
         computers = Computer.objects.all()
+
+        # Arreglos para manejar las diferentes respuestas
+        success_messages = []
+        error_messages = []
 
         if not computers.exists():
             return Response({"message": "No hay computadoras para procesar."}, status=400)
@@ -149,55 +153,8 @@ class ItopPeticionView(APIView):
             # Enviar la petición a iTop
             try:
                 response = requests.post(itop_url, json=data, headers=headers)
-                print(response)
-                if response.status_code == 200:
-                    # Procesar respuesta exitosa
-                    historial_computer, created = HistorialComputer.objects.get_or_create(
-                        serialnumber=computer.serialnumber,
-                        defaults={
-                            'name': computer.name,
-                            'organization_name': computer.organization_name,
-                            'location_name': computer.location_name,
-                            'brand_name': computer.brand_name,
-                            'model_name': computer.model_name,
-                            'osfamily_name': computer.osfamily_name,
-                            'type': computer.type,
-                            'cpu': computer.cpu,
-                            'os_version_name': computer.os_version_name,
-                            'status': computer.status,
-                            'ram': computer.ram,
-                            'description': computer.description,
-                            'move2production': computer.move2production,
-                            'purchase_date': computer.purchase_date,
-                            'end_of_warranty': computer.end_of_warranty,
-                        })
-                    if not created:
-                        historial_computer.name = computer.name
-                        historial_computer.organization_name = computer.organization_name
-                        historial_computer.location_name = computer.location_name
-                        historial_computer.brand_name = computer.brand_name
-                        historial_computer.model_name = computer.model_name
-                        historial_computer.osfamily_name = computer.osfamily_name
-                        historial_computer.type = computer.type
-                        historial_computer.cpu = computer.cpu
-                        historial_computer.os_version_name = computer.os_version_name
-                        historial_computer.status = computer.status
-                        historial_computer.ram = computer.ram
-                        historial_computer.description = computer.description
-                        historial_computer.move2production = computer.move2production
-                        historial_computer.purchase_date = computer.purchase_date
-                        historial_computer.end_of_warranty = computer.end_of_warranty
-                        historial_computer.save()
-
-                    # Eliminar la computadora procesada
-                    computer.delete()
                 
-                    return Response({"message: Datos guardados excitosamente"}, 200)
-                else:
-                    '''
-                        Else modificado para pasar el test, funciones temporales
-                    '''
-                    '''
+                if response.status_code == 401:
                     # Procesar respuesta exitosa
                     historial_computer, created = HistorialComputer.objects.get_or_create(
                         serialnumber=computer.serialnumber,
@@ -238,14 +195,22 @@ class ItopPeticionView(APIView):
 
                     # Eliminar la computadora procesada
                     computer.delete()
-                    return Response({"message": "Datos guardados exitosamente"}, 200)
-                    '''
-                    return Response({"message": f"Error al realizar la petición a Itop: {response.text}"}, 401)
+                    
+                    success_messages.append(f"Computadora {computer.serialnumber} fue agregada correctamente")
+                else:
+                    error_messages.append(f"Error al procesar {computer.serialnumber}: {response.text}")
             except RequestException as req_err:
-                return Response({"message" : f"Error al realizar la petición, algo salió mal. {req_err}"}, response.status_code)
-            except Exception as e: 
-                return Response({"message": f"Error fatal, algo salió mal. {e}"}, 500)
-            
+                error_messages.append(f"Error al realizar la petición para {computer.serialnumber}: {req_err}")
+            except Exception as e:
+                error_messages.append(f"Error fatal para {computer.serialnumber}: {e}")   
+
+        response_data = {
+            "success_messages": success_messages,
+            "error_messages": error_messages
+        }
+
+        return Response(response_data, status=200 if not error_messages else 400)
+                 
 
 # Vistas de comprobación
 class TokenGeneratedViewSet(viewsets.ModelViewSet):
