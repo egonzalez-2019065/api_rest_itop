@@ -8,7 +8,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         model = User
         fields = ['username']
 
-class ComputerSerializer(serializers.HyperlinkedModelSerializer):
+class ComputerSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Computer
         fields = '__all__'

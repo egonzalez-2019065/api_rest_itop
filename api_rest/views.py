@@ -27,69 +27,63 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ['get']
 
 
-class ComputerViewSet(viewsets.ModelViewSet):
-    # Endpoint que devuelve las computadoras
+class ComputerViewSet(APIView):
+    # Solo permitir el método POST
+    http_method_names = ['post']
+    
     queryset = Computer.objects.all()
     serializer_class = ComputerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    # Campos que no deberían actualizarse, de momento ejemplos
     protected_fields = ['move2production', 'purchase_date']
     
-    # Función que realiza el guardado o bien la actualización de los datos si es que los contiene
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+        # Aquí va la lógica para crear o actualizar la computadora
         # Extraer el token desde los headers
         auth_header = request.headers.get('Authorization')
 
-        # Verificar que el token está presente
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]  # Extraer solo el token sin 'Bearer '
 
             try:
-                # Obtener los datos del request
                 serial_number = request.data.get('serialnumber')
-                
-                # Verificar si la computadora ya existe por el número de serie
                 computer = Computer.objects.get(serialnumber=serial_number)
-                 # Comparar y filtrar los campos que no deben ser actualizados
-                data = request.data.copy()  # Se hace una copia para no afectar a la data extraída
+
+                data = request.data.copy()
                 for field in self.protected_fields:
                     if field in data:
-                        data.pop(field)  # Eliminar los campos protegidos de los datos enviados
+                        data.pop(field)  # Eliminar campos protegidos
 
                 # Actualizar los campos permitidos
-                serializer = self.get_serializer(computer, data=data, partial=True) # Creando la instancia de serializer para poder actualizar los datos
-                serializer.is_valid(raise_exception=True) # Válida que los datos cumplan con los definido en el modelo, por ejemplo la longitud máxima y demás
-                self.perform_update(serializer) # Actualiza en la base de datos
-                
-                # Invalidar el token para que siempre sea único
+                serializer = ComputerSerializer(computer, data=data, partial=True, context={'request': request})
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
                 self._blacklist_token(token)
                 return Response({"message": "Actualizado correctamente", "data": serializer.data})
-                
+
             except Computer.DoesNotExist:
-                # Si la computadora no existe, creamos una nueva
-                response = super().create(request, *args, **kwargs)
-                self._blacklist_token(token)
-                return response
+                serializer = ComputerSerializer(data=request.data)
+                if serializer.is_valid(): 
+                    serializer.save()
+                    self._blacklist_token(token)
+                    return Response({"message": f"Equipo creado exitosamente {serializer.data}"})
+                return Response(serializer.errors, status=400)
+
             except Exception as e:
+                self._blacklist_token(token)
                 return Response({"Sucedió un error inesperado": str(e)}, 400)
-        
+
         else:
             return Response({"error": "Token no proporcionado"}, 400)
 
     def _blacklist_token(self, token):
         try:
-            # Validar el token
             AccessToken(token)
-
-            # Añadir el token a la blacklist
             BlacklistedAccessToken.objects.create(token=token)
-
-            return Response({"status": "Token añadido a la lista negra"})
         except Exception as e:
             return Response({"error": str(e)}, 400)
         
-
 class CostumTokenObtainPairView(TokenObtainPairView):
     # Función para guardar el token en la base de datos
     def post(self, request, *args, **kwargs):

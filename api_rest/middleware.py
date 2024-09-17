@@ -11,6 +11,6 @@ class CheckBlacklistedAccessTokenMiddleware(MiddlewareMixin):
             try:
                 AccessToken(token)  # Valida el token
                 if BlacklistedAccessToken.objects.filter(token=token).exists():
-                    raise PermissionDenied("Se agregó el token a la blacklist")
+                    raise PermissionDenied("El token está en la lista negra")
             except Exception as e:
                 raise PermissionDenied("Token inválido")
