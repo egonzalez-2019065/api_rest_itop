@@ -156,9 +156,8 @@ class ItopPeticionView(APIView):
             try:
                 response = requests.post(itop_url, json=data, headers=headers)
                 print(response)
-                if response.status_code == 401:
+                if response.status_code == 200:
                     # Procesar respuesta exitosa
-
                     historial_computer, created = HistorialComputer.objects.get_or_create(
                         serialnumber=computer.serialnumber,
                         defaults={
@@ -177,7 +176,7 @@ class ItopPeticionView(APIView):
                             'move2production': computer.move2production,
                             'purchase_date': computer.purchase_date,
                             'end_of_warranty': computer.end_of_warranty,
-                        }                    )
+                        })
                     if not created:
                         historial_computer.name = computer.name
                         historial_computer.organization_name = computer.organization_name
@@ -201,7 +200,53 @@ class ItopPeticionView(APIView):
                 
                     return Response({"message: Datos guardados excitosamente"}, 200)
                 else:
-                    return Response({"message": f"Error al realizar la petición a Itop: {response.text}"}, 200)
+                    '''
+                        Else modificado para pasar el test, funciones temporales
+                    '''
+                    '''
+                    # Procesar respuesta exitosa
+                    historial_computer, created = HistorialComputer.objects.get_or_create(
+                        serialnumber=computer.serialnumber,
+                        defaults={
+                            'name': computer.name,
+                            'organization_name': computer.organization_name,
+                            'location_name': computer.location_name,
+                            'brand_name': computer.brand_name,
+                            'model_name': computer.model_name,
+                            'osfamily_name': computer.osfamily_name,
+                            'type': computer.type,
+                            'cpu': computer.cpu,
+                            'os_version_name': computer.os_version_name,
+                            'status': computer.status,
+                            'ram': computer.ram,
+                            'description': computer.description,
+                            'move2production': computer.move2production,
+                            'purchase_date': computer.purchase_date,
+                            'end_of_warranty': computer.end_of_warranty,
+                        })
+                    if not created:
+                        historial_computer.name = computer.name
+                        historial_computer.organization_name = computer.organization_name
+                        historial_computer.location_name = computer.location_name
+                        historial_computer.brand_name = computer.brand_name
+                        historial_computer.model_name = computer.model_name
+                        historial_computer.osfamily_name = computer.osfamily_name
+                        historial_computer.type = computer.type
+                        historial_computer.cpu = computer.cpu
+                        historial_computer.os_version_name = computer.os_version_name
+                        historial_computer.status = computer.status
+                        historial_computer.ram = computer.ram
+                        historial_computer.description = computer.description
+                        historial_computer.move2production = computer.move2production
+                        historial_computer.purchase_date = computer.purchase_date
+                        historial_computer.end_of_warranty = computer.end_of_warranty
+                        historial_computer.save()
+
+                    # Eliminar la computadora procesada
+                    computer.delete()
+                    return Response({"message": "Datos guardados exitosamente"}, 200)
+                    '''
+                    return Response({"message": f"Error al realizar la petición a Itop: {response.text}"}, 401)
             except RequestException as req_err:
                 return Response({"message" : f"Error al realizar la petición, algo salió mal. {req_err}"}, response.status_code)
             except Exception as e: 
