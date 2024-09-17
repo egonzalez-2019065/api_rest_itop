@@ -5,9 +5,9 @@ from .models import BlacklistedAccessToken
 
 class CheckBlacklistedAccessTokenMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            token = auth_header.split(' ')[1]
+        auth_header = request.headers.get('Authorization') # Extrae el token de la petición
+        if auth_header and auth_header.startswith('Bearer '): # Verifica que el token venga en el formato correcto
+            token = auth_header.split(' ')[1] # Guarda únicamente el token
             try:
                 AccessToken(token)  # Valida el token
                 if BlacklistedAccessToken.objects.filter(token=token).exists():
