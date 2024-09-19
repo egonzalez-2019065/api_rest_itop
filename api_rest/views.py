@@ -12,6 +12,9 @@ import base64
 import requests
 from requests.exceptions import RequestException
 from rest_framework.views import APIView
+import json
+from urllib.parse import urlencode
+
 
 # Serializadores
 from api_rest.serealizer import UserSerializer, ComputerSerializer, HistorialComputerSerializer, TokenGeneratedSerializer
@@ -35,54 +38,62 @@ class ComputerViewSet(APIView):
     serializer_class = ComputerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    protected_fields = ['move2production', 'purchase_date']
+    # Campos que no deberían actualizarse, de momento ejemplos
+    protected_fields = []
     
     def post(self, request, *args, **kwargs):
-        # Aquí va la lógica para crear o actualizar la computadora
-        # Extraer el token desde los headers
+        # Procesar la data primero
+        data = request.data
+        print(data)
+        token = None
         auth_header = request.headers.get('Authorization')
-
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]  # Extraer solo el token sin 'Bearer '
-
-            try:
-                serial_number = request.data.get('serialnumber')
-                computer = Computer.objects.get(serialnumber=serial_number)
-
-                data = request.data.copy()
-                for field in self.protected_fields:
-                    if field in data:
-                        data.pop(field)  # Eliminar campos protegidos
-
-                # Actualizar los campos permitidos
-                serializer = ComputerSerializer(computer, data=data, partial=True, context={'request': request})
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-
-                self._blacklist_token(token)
-                return Response({"message": "Actualizado correctamente", "data": serializer.data}, 200)
-
-            except Computer.DoesNotExist:
-                serializer = ComputerSerializer(data=request.data)
-                if serializer.is_valid(): 
-                    serializer.save()
-                    self._blacklist_token(token)
-                    return Response({"message": f"Equipo creado exitosamente {serializer.data}"}, 201)
-                return Response(serializer.errors, status=400)
-
-            except Exception as e:
-                self._blacklist_token(token)
-                return Response({"Sucedió un error inesperado": str(e)}, 400)
-
-        else:
+        print(token)
+        if not token:
             return Response({"error": "Token no proporcionado"}, 400)
+
+        try:
+            # Obtener el número de serie
+            serial_number = data.get('serialnumber')
+            if not serial_number:
+                return Response({"error": "Número de serie no proporcionado"}, 400)
+
+            # Intentar obtener la computadora existente
+            try:
+                computer = Computer.objects.get(serialnumber=serial_number)
+                return self.update_computer(computer, data, token)
+            except Computer.DoesNotExist:
+                return self.create_computer(data, token)
+
+        except Exception as e:
+            self._blacklist_token(token)
+            return Response({"error": "No se pudo procesar al máquina"}, 400)
+
+    def update_computer(self, computer, data, token):
+        # Filtrar campos protegidos
+        for field in self.protected_fields:
+            data.pop(field, None)
+
+        serializer = ComputerSerializer(computer, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            self._blacklist_token(token)
+            return Response({"message": "Actualizado correctamente"}, 200)
+
+    def create_computer(self, data, token):
+        serializer = ComputerSerializer(data=data, context={'request': self.request})
+        if serializer.is_valid():
+            serializer.save()
+            self._blacklist_token(token)
+            return Response({"message": "Equipo creado exitosamente", "data": serializer.data}, 201)
 
     def _blacklist_token(self, token):
         try:
             AccessToken(token)
             BlacklistedAccessToken.objects.create(token=token)
         except Exception as e:
-            return Response({"error": str(e)}, 400)
+            return Response({"message": "Error al mandar el token a la lista negra"}, 400)
         
 class CostumTokenObtainPairView(TokenObtainPairView):
     # Función para guardar el token en la base de datos
@@ -115,30 +126,35 @@ class ItopPeticionView(APIView):
             data = {
                 "operation": "core/create",
                 "class": "PC",
+                "comment": "Computadora agregada desde el API",
                 "fields": {
-                    "hostname": computer.name, 
-                    "organization_name": computer.organization_name,
-                    "location_name": computer.location_name,
-                    "brand_name": computer.brand_name,
-                    "model_name": computer.model_name,
-                    "osfamily_name": computer.osfamily_name,
-                    "type": computer.type,
-                    "cpu": computer.cpu,
-                    "os_version_name": computer.os_version_name,
-                    "serialnumber": computer.serialnumber,
-                    "status": computer.status,
-                    "ram": computer.ram,
+                    "name": computer.name,
                     "description": computer.description,
+                    "org_id": computer.organization_id or 15,
                     "move2production": computer.move2production.strftime("%Y-%m-%d") if computer.move2production else None,
+                    "serialnumber": computer.serialnumber,
+                    "location_id": computer.location_id or 8,
+                    "status": computer.status,
+                    "brand_id": computer.brand_id or 104,
+                    "model_id": computer.model_id or 105,
                     "purchase_date": computer.purchase_date.strftime("%Y-%m-%d") if computer.purchase_date else None,
                     "end_of_warranty": computer.end_of_warranty.strftime("%Y-%m-%d") if computer.end_of_warranty else None,
+                    "osfamily_id": computer.osfamily_id or 106,
+                    "osversion_id": computer.os_version_id or 107,
+                    "cpu": computer.cpu,
+                    "ram": computer.ram,
+                    "type": computer.type
                 }
             }
 
+            # Convertirlo a JSON
+            json_data = json.dumps(data)
+
+            # Preparando la URl            
             # Preparación de las credenciales para agregarlas a los headers
+            itop_url = os.getenv('ITOP_URL')
             username = os.getenv('USER_ITOP')
             password = os.getenv('PASSWORD_ITOP')
-            itop_url = os.getenv('ITOP_URL')
 
             # Codificación de las credenciales
             credentials = f'{username}:{password}'
@@ -149,25 +165,31 @@ class ItopPeticionView(APIView):
                 'Content-Type': 'application/json',
                 'Authorization': f'Basic {encoded_credentials}'
             }
-
+            # Enviar la url completa 
+            url_base = f"{itop_url}&json_data={json_data}"
+            
             # Enviar la petición a iTop
             try:
-                response = requests.post(itop_url, json=data, headers=headers)
-                
-                if response.status_code == 401:
+                print(url_base)
+                response = requests.request("POST", url_base, headers=headers)
+                print(f"Status Code: {response.status_code}")
+                print(f"Response Headers: {response.headers}")
+                print(f"Response Content: {response.text}")
+
+                if response.status_code == 200:
                     # Procesar respuesta exitosa
                     historial_computer, created = HistorialComputer.objects.get_or_create(
                         serialnumber=computer.serialnumber,
                         defaults={
                             'name': computer.name,
-                            'organization_name': computer.organization_name,
-                            'location_name': computer.location_name,
-                            'brand_name': computer.brand_name,
-                            'model_name': computer.model_name,
-                            'osfamily_name': computer.osfamily_name,
+                            'organization_id': computer.organization_id,
+                            'location_id': computer.location_id,
+                            'brand_id': computer.brand_id,
+                            'model_id': computer.model_id,
+                            'osfamily_id': computer.osfamily_id,
                             'type': computer.type,
                             'cpu': computer.cpu,
-                            'os_version_name': computer.os_version_name,
+                            'os_version_id': computer.os_version_id,
                             'status': computer.status,
                             'ram': computer.ram,
                             'description': computer.description,
@@ -177,14 +199,14 @@ class ItopPeticionView(APIView):
                         })
                     if not created:
                         historial_computer.name = computer.name
-                        historial_computer.organization_name = computer.organization_name
-                        historial_computer.location_name = computer.location_name
-                        historial_computer.brand_name = computer.brand_name
-                        historial_computer.model_name = computer.model_name
-                        historial_computer.osfamily_name = computer.osfamily_name
+                        historial_computer.organization_id = computer.organization_id
+                        historial_computer.location_id = computer.location_id
+                        historial_computer.brand_id = computer.brand_id
+                        historial_computer.model_id = computer.model_id
+                        historial_computer.osfamily_id = computer.osfamily_id
                         historial_computer.type = computer.type
                         historial_computer.cpu = computer.cpu
-                        historial_computer.os_version_name = computer.os_version_name
+                        historial_computer.os_version_id = computer.os_version_id
                         historial_computer.status = computer.status
                         historial_computer.ram = computer.ram
                         historial_computer.description = computer.description
@@ -198,19 +220,19 @@ class ItopPeticionView(APIView):
                     
                     success_messages.append(f"Computadora {computer.serialnumber} fue agregada correctamente")
                 else:
-                    error_messages.append(f"Error al procesar {computer.serialnumber}: {response.text}")
+                    error_messages.append(f"Error al procesar {computer.serialnumber}: {response.text} código: {response.status_code}")
             except RequestException as req_err:
                 error_messages.append(f"Error al realizar la petición para {computer.serialnumber}: {req_err}")
             except Exception as e:
                 error_messages.append(f"Error fatal para {computer.serialnumber}: {e}")   
 
+        # Respuesta final
         response_data = {
             "success_messages": success_messages,
             "error_messages": error_messages
         }
 
-        return Response(response_data, status=200 if not error_messages else 400)
-                 
+        return Response(response_data, status=200 if not error_messages else 400)                 
 
 # Vistas de comprobación
 class TokenGeneratedViewSet(viewsets.ModelViewSet):
