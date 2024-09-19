@@ -12,7 +12,7 @@ class ComputerSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Computer
         fields = '__all__'
-
+    
 class TokenGeneratedSerializer(serializers.ModelSerializer):
     class Meta:
         model = TokenGenerated
