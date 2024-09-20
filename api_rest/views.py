@@ -123,11 +123,7 @@ class ItopPeticionView(APIView):
 
         for computer in computers:
             # Preparando los datos extraídos
-            data =  {
-                "operation": "core/create",
-                "class": "PC",
-                "comment": "Computadora agregada desde el API",
-                "fields" : {
+            fields = {
                     "name": computer.name,
                     "description": computer.description,
                     "org_id": computer.organization_id or 15,
@@ -145,8 +141,27 @@ class ItopPeticionView(APIView):
                     "ram": computer.ram,
                     "type": computer.type
                 }
-            }
-
+            # Decidiendo si actualizará o agregará la computadora
+            id_serialnumber = SerialAndIDItop.objects.filter(serial_number=computer.serialnumber)
+            data = None
+            if id_serialnumber:
+                data = {
+                    "operation": "core/update",
+                    "class": "PC",
+                    "comment": "Computadora actualizada desde el API",
+                    "key": f"SELECT PC WHERE serialnumber = '{computer.serialnumber}'"
+                }
+            else: 
+                data = {
+                    "operation": "core/create",
+                    "class": "PC",
+                    "comment": "Computadora agregada desde el API",  
+                    "output_fields": "name"
+                }
+            
+            data["fields"] = fields
+            print(data)
+        
             # Convertirlo a JSON
             json_data = json.dumps(data)
 
@@ -172,7 +187,7 @@ class ItopPeticionView(APIView):
             # Enviar la petición a iTop
             try:
                 response = requests.request("POST", url_base, headers=headers)
-                
+                print(f'Respuesta Itop: {response.text}')
                 # Convierte la respuesta a un json
                 itop_response = response.json()
                 # Validación de la respuesta general de Itop
