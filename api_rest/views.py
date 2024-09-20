@@ -1,10 +1,10 @@
 # Importaciones del framework
+import re
 from django.contrib.auth.models import User
-from .models import Computer, TokenGenerated, HistorialComputer
+from .models import BlacklistedAccessToken, Computer, SerialAndIDItop, TokenGenerated, HistorialComputer
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from .models import BlacklistedAccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from dotenv import load_dotenv
 import os
@@ -123,11 +123,11 @@ class ItopPeticionView(APIView):
 
         for computer in computers:
             # Preparando los datos extraídos
-            data = {
+            data =  {
                 "operation": "core/create",
                 "class": "PC",
                 "comment": "Computadora agregada desde el API",
-                "fields": {
+                "fields" : {
                     "name": computer.name,
                     "description": computer.description,
                     "org_id": computer.organization_id or 15,
@@ -150,7 +150,8 @@ class ItopPeticionView(APIView):
             # Convertirlo a JSON
             json_data = json.dumps(data)
 
-            # Preparando la URl            
+            # Preparando la URl   
+            encoded_json_data = urlencode({'json_data': json_data})
             # Preparación de las credenciales para agregarlas a los headers
             itop_url = os.getenv('ITOP_URL')
             username = os.getenv('USER_ITOP')
@@ -166,61 +167,79 @@ class ItopPeticionView(APIView):
                 'Authorization': f'Basic {encoded_credentials}'
             }
             # Enviar la url completa 
-            url_base = f"{itop_url}&json_data={json_data}"
+            url_base = f"{itop_url}&{encoded_json_data}"
             
             # Enviar la petición a iTop
             try:
-                print(url_base)
                 response = requests.request("POST", url_base, headers=headers)
-                print(f"Status Code: {response.status_code}")
-                print(f"Response Headers: {response.headers}")
-                print(f"Response Content: {response.text}")
-
+                
+                # Convierte la respuesta a un json
+                itop_response = response.json()
+                # Validación de la respuesta general de Itop
                 if response.status_code == 200:
-                    # Procesar respuesta exitosa
-                    historial_computer, created = HistorialComputer.objects.get_or_create(
-                        serialnumber=computer.serialnumber,
-                        defaults={
-                            'name': computer.name,
-                            'organization_id': computer.organization_id,
-                            'location_id': computer.location_id,
-                            'brand_id': computer.brand_id,
-                            'model_id': computer.model_id,
-                            'osfamily_id': computer.osfamily_id,
-                            'type': computer.type,
-                            'cpu': computer.cpu,
-                            'os_version_id': computer.os_version_id,
-                            'status': computer.status,
-                            'ram': computer.ram,
-                            'description': computer.description,
-                            'move2production': computer.move2production,
-                            'purchase_date': computer.purchase_date,
-                            'end_of_warranty': computer.end_of_warranty,
-                        })
-                    if not created:
-                        historial_computer.name = computer.name
-                        historial_computer.organization_id = computer.organization_id
-                        historial_computer.location_id = computer.location_id
-                        historial_computer.brand_id = computer.brand_id
-                        historial_computer.model_id = computer.model_id
-                        historial_computer.osfamily_id = computer.osfamily_id
-                        historial_computer.type = computer.type
-                        historial_computer.cpu = computer.cpu
-                        historial_computer.os_version_id = computer.os_version_id
-                        historial_computer.status = computer.status
-                        historial_computer.ram = computer.ram
-                        historial_computer.description = computer.description
-                        historial_computer.move2production = computer.move2production
-                        historial_computer.purchase_date = computer.purchase_date
-                        historial_computer.end_of_warranty = computer.end_of_warranty
-                        historial_computer.save()
+                    # Guardar la computadora con el ID que devuelva Itop
+                    # Convetir el diccionario a cadena de texto
+                    itop_response_str = str(itop_response)
+                    # Buscarlo en la cadena de texto
+                    itop_id_match = re.search(r'PC::(\d+)', itop_response_str)
+                    # ID extraído
+                    itop_id_final = itop_id_match.group(1)
+                    # Guarda el id de la respuesta de Itop y el número de serie
+                    serial_number_instance, created = SerialAndIDItop.objects.get_or_create(
+                        serial_number=computer.serialnumber,  # Buscar por el número de serie
+                        defaults = {
+                            'id_itop': itop_id_final  # Si no existe, crear con este id_itop
+                        }
+                    )
 
-                    # Eliminar la computadora procesada
-                    computer.delete()
-                    
-                    success_messages.append(f"Computadora {computer.serialnumber} fue agregada correctamente")
-                else:
-                    error_messages.append(f"Error al procesar {computer.serialnumber}: {response.text} código: {response.status_code}")
+                    # Validación más detallada según el error que devuelva Itop
+                    if itop_response['code'] == 0: 
+                        # Procesar respuesta exitosa
+                        historial_computer, created = HistorialComputer.objects.get_or_create(
+                            serialnumber=computer.serialnumber,
+                            defaults={
+                                'name': computer.name,
+                                'organization_id': computer.organization_id,
+                                'location_id': computer.location_id,
+                                'brand_id': computer.brand_id,
+                                'model_id': computer.model_id,
+                                'osfamily_id': computer.osfamily_id,
+                                'type': computer.type,
+                                'cpu': computer.cpu,
+                                'os_version_id': computer.os_version_id,
+                                'status': computer.status,
+                                'ram': computer.ram,
+                                'description': computer.description,
+                                'move2production': computer.move2production,
+                                'purchase_date': computer.purchase_date,
+                                'end_of_warranty': computer.end_of_warranty,
+                            })
+                        if not created:
+                            historial_computer.name = computer.name
+                            historial_computer.organization_id = computer.organization_id
+                            historial_computer.location_id = computer.location_id
+                            historial_computer.brand_id = computer.brand_id
+                            historial_computer.model_id = computer.model_id
+                            historial_computer.osfamily_id = computer.osfamily_id
+                            historial_computer.type = computer.type
+                            historial_computer.cpu = computer.cpu
+                            historial_computer.os_version_id = computer.os_version_id
+                            historial_computer.status = computer.status
+                            historial_computer.ram = computer.ram
+                            historial_computer.description = computer.description
+                            historial_computer.move2production = computer.move2production
+                            historial_computer.purchase_date = computer.purchase_date
+                            historial_computer.end_of_warranty = computer.end_of_warranty
+                            historial_computer.save()
+
+                        # Eliminar la computadora procesada
+                        computer.delete()
+                        
+                        success_messages.append(f"Computadora {computer.serialnumber} fue agregada correctamente")
+                    else:
+                        error_messages.append(f"Error al procesar {computer.serialnumber}, {itop_response['message']} código: {itop_response['code']}")
+                else: 
+                    error_messages.append(f"Error al procesar {computer.serialnumber}, {response.text} código: {response.status_code}")
             except RequestException as req_err:
                 error_messages.append(f"Error al realizar la petición para {computer.serialnumber}: {req_err}")
             except Exception as e:
