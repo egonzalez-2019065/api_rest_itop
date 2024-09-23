@@ -1,7 +1,7 @@
 # Importaciones del framework
 import re
 from django.contrib.auth.models import User
-from .models import BlacklistedAccessToken, Computer, SerialAndIDItop, TokenGenerated, HistorialComputer
+from .models import BlacklistedAccessToken, Computer, SerialAndIDItop, TokenGenerated, HistorialComputer, APITok
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -14,6 +14,7 @@ from requests.exceptions import RequestException
 from rest_framework.views import APIView
 import json
 from urllib.parse import urlencode
+import secrets
 
 
 # Serializadores
@@ -95,7 +96,8 @@ class ComputerViewSet(APIView):
         except Exception as e:
             return Response({"message": "Error al mandar el token a la lista negra"}, 400)
         
-class CostumTokenObtainPairView(TokenObtainPairView):
+class CostumTokenObtainPairView(APIView):
+    '''
     # Función para guardar el token en la base de datos
     def post(self, request, *args, **kwargs):
         # Captura la respuesta para obtener el token
@@ -107,7 +109,23 @@ class CostumTokenObtainPairView(TokenObtainPairView):
 
         # Retornar solo el token de acceso
         return Response({'access': access_token})
-    
+    '''
+    def post(self, request): 
+        token = request.headers.get('token')
+        try:
+            api_key = APITok.objects.get(key=token)
+        except APITok.DoesNotExist:
+            return Response({"Token no válido"}, 401)
+        except Exception as e:
+            return Response({"Error al intentar generar el token"}, 500) 
+        
+
+        access = AccessToken.for_user(api_key.user)
+
+        TokenGenerated.objects.create(token = access)
+        return Response({
+            'access': f"{access}",
+        })
 
 class ItopPeticionView(APIView):
     def post(self, request):
@@ -266,7 +284,7 @@ class ItopPeticionView(APIView):
             "error_messages": error_messages
         }
 
-        return Response(response_data, status=200 if not error_messages else 400)                 
+        return Response(response_data, status=200 if not error_messages else 400)     
 
 # Vistas de comprobación
 class TokenGeneratedViewSet(viewsets.ModelViewSet):
