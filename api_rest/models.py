@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils import timezone
+from django.contrib.auth.models import User
 
 from django.db import models
 
@@ -55,3 +55,7 @@ class SerialAndIDItop(models.Model):
     serial_number = models.CharField(max_length=50, unique=True)
     id_itop = models.PositiveIntegerField(unique=True)
 
+class APITok(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    key = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now=True)
