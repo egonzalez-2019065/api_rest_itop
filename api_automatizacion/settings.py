@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-
+    'django_q'
 ]
 
 MIDDLEWARE = [
@@ -59,6 +59,17 @@ MIDDLEWARE = [
     'api_rest.middleware.CheckBlacklistedAccessTokenMiddleware',
 ]
 
+Q_CLUSTER = {
+    'name': 'Django-Q',
+    'workers': 4,
+    'timeout': 60,
+    'retry': 120,
+    'queue_limit': 300,
+    'bulk': 10,
+    'orm': 'default',
+    'log_level': 'INFO',
+    'scheduler': True,
+}
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -66,6 +77,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
+
 ROOT_URLCONF = 'api_automatizacion.urls'
 
 TEMPLATES = [
@@ -84,6 +96,32 @@ TEMPLATES = [
     },
 ]
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',  
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO', 
+            'propagate': False,
+        },
+        'django_q': {  
+            'handlers': ['console'],
+            'level': 'INFO',  
+            'propagate': False,
+        },
+        'myapp': {  
+            'handlers': ['console'], 
+            'level': 'INFO',
+            'propagate': False,
+        },
+    }
+}
 WSGI_APPLICATION = 'api_automatizacion.wsgi.application'
 
 
