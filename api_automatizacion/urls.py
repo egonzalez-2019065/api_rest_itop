@@ -5,8 +5,7 @@ from api_rest import views
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
-router.register(r'generated-tokens', views.TokenGeneratedViewSet) # Vista temporal 
-router.register(r'historial-computer', views.HistorialComputerViewSet) # Vista temporal 
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -14,5 +13,4 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token/', views.CostumTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('computers/', views.ComputerViewSet.as_view(), name='computer-create'),
-    path('api_peticion/', views.ItopPeticionView.as_view(), name='api_peticion'),
 ]
