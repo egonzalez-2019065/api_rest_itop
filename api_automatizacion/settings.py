@@ -62,9 +62,9 @@ MIDDLEWARE = [
 Q_CLUSTER = {
     'name': 'Django-Q',
     'workers': 4,
-    'timeout': 60,
-    'retry': 120,
-    'queue_limit': 300,
+    'timeout': 30,
+    'retry': 60,
+    'queue_limit': 500,
     'bulk': 10,
     'orm': 'default',
     'log_level': 'INFO',
@@ -118,6 +118,11 @@ LOGGING = {
         'myapp': {  
             'handlers': ['console'], 
             'level': 'INFO',
+            'propagate': False,
+        },
+        'urllib3': { 
+            'handlers': ['console'], 
+            'level': 'WARNING',
             'propagate': False,
         },
     }
