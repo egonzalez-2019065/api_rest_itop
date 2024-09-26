@@ -1,23 +1,16 @@
 # Importaciones del framework
 import re
 from django.contrib.auth.models import User
-from .models import BlacklistedAccessToken, Computer, SerialAndIDItop, TokenGenerated, HistorialComputer, APITok
+from .models import BlacklistedAccessToken, Computer, TokenGenerated, APITok
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from requests.exceptions import RequestException
 from rest_framework.views import APIView
 from django_q.tasks import async_task
 from dotenv import load_dotenv
-import os
-import base64
-import requests
-import json
-from urllib.parse import urlencode
-
 
 # Serializadores
-from api_rest.serealizer import UserSerializer, ComputerSerializer, HistorialComputerSerializer, TokenGeneratedSerializer
+from api_rest.serealizer import UserSerializer, ComputerSerializer
 
 # Configuración de las variables de entorno 
 load_dotenv()
@@ -33,7 +26,8 @@ class UserViewSet(viewsets.ModelViewSet):
 class ComputerViewSet(APIView):
     # Solo permitir el método POST
     http_method_names = ['post']
-    
+
+    # Endpoint que permite la creación de una nueva computadora
     queryset = Computer.objects.all()
     serializer_class = ComputerSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -57,7 +51,7 @@ class ComputerViewSet(APIView):
             if not serial_number:
                 return Response({"error": "Número de serie no proporcionado"}, 400)
 
-            # Intentar obtener la computadora existente
+            # Intentar obtener la computadora si es que existe
             try:
                 computer = Computer.objects.get(serialnumber=serial_number)
                 return self.update_computer(computer, data, token)
@@ -66,29 +60,29 @@ class ComputerViewSet(APIView):
         except Exception as e:
             #self._blacklist_token(token)
             return Response({"error": f"No se pudo procesar al máquina {e}"}, 400)
-
+    
+    # Actualizar una computadora existente
     def update_computer(self, computer, data, token):
         # Filtrar campos protegidos
         for field in self.protected_fields:
             data.pop(field, None)
-
         serializer = ComputerSerializer(computer, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             self._blacklist_token(token)
-            return Response({"message": "Actualizado correctamente"}, 200)
+            return Response({"message": "Equipo actualizado correctamente"}, 200)
         return Response(serializer.errors, status=400)  # Retornar errores de validación
 
-
+    # Crear una nueva computadora
     def create_computer(self, data, token):
         serializer = ComputerSerializer(data=data, context={'request': self.request})
         if serializer.is_valid():
-            async_task('api_rest.tasks.clear', data)
-            #self._blacklist_token(token)
-            return Response({"message": "Equipo creado exitosamente", "data": serializer.data}, 201)
+            async_task('api_rest.tasks.clear', data) # Iniciar la tarea asíncronica para limpiar la data
+            #self._blacklist_token(token) 
+            return Response({"message": "Equipo creado exitosamente"}, 201)
         return Response(serializer.errors, status=400)  # Retornar errores de validación
- 
 
+    # Mandar el token a la lista negra e inválidarlo luego de su consumo
     def _blacklist_token(self, token):
         try:
             AccessToken(token)
@@ -98,6 +92,9 @@ class ComputerViewSet(APIView):
         
 class CostumTokenObtainPairView(APIView):
     '''
+    #
+    #   Comentada debido al cambio en la forma en que se válida el token (Documentación)
+    #
     # Función para guardar el token en la base de datos
     def post(self, request, *args, **kwargs):
         # Captura la respuesta para obtener el token
@@ -110,6 +107,8 @@ class CostumTokenObtainPairView(APIView):
         # Retornar solo el token de acceso
         return Response({'access': access_token})
     '''
+
+    # Función que obtiene el token y retorna un JWT 
     def post(self, request): 
         token = request.headers.get('token')
         try:
@@ -119,17 +118,20 @@ class CostumTokenObtainPairView(APIView):
         except Exception as e:
             return Response({"Error al intentar generar el token"}, 500) 
         
-
+        # Creación del JWT
         access = AccessToken.for_user(api_key.user)
-
         TokenGenerated.objects.create(token = access)
         return Response({
             'access': f"{access}",
         })
 
 
-# Función provisional para crear un token: 
 '''
+#
+#   Comentada debido ya que su uso es únicamente si se quisiera crear un token para un usuario, 
+#       en vez de utilizar sus credenciales
+#
+# Función provisional para crear un token:
 import secrets
 class Prueba: 
     @staticmethod
@@ -153,7 +155,13 @@ class Prueba:
             token = Prueba.generate_unique_token(user)
             print("Token generado:", token)
         except User.DoesNotExist:
-            print("Usuario no encontrado.")    
+            print("Usuario no encontrado.")   
+
+#
+#   Comando para ejecutarla en la shell: 
+#       from api_rest.views import Prueba  
+#       Prueba.generate_and_print_token('user_example') -> Colocar un usuario existente en la DB	
+#  
 '''
 
 
