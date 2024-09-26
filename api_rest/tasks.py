@@ -37,8 +37,9 @@ def pattern(class_name, look_to, field_value):
     simple_data = {
         "operation": "core/get",
         "class": f"{class_name}",
-        "key": f"SELECT {class_name} WHERE {look_to} LIKE '%{field_value}%'",
-        "output_fields": "name"
+        "key": f"SELECT {class_name} WHERE {look_to} = '{field_value}'",
+        "output_fields": "name",
+        "limit": 1,
     }
 
     # Convertirlo a JSON  
@@ -67,32 +68,25 @@ def pattern(class_name, look_to, field_value):
                 return id_final
             
 # Función para obtener los valores reales según el API 
-
 def clear(data):
-    
-    # Obtener el dato de la organización
-    if data.get('organization_id'):
-        organization_id = pattern('Organization', 'name', data['organization_id'])
-        if organization_id:
-            data['organization_id'] = organization_id
-        else:
-            data['organization_id'] = None
     
     # Obtener el dato de la locación
     if data.get('location_id'):
-        match data.get('organization_id'):
-            case "Estados Unidos":
-                location_id = pattern('Location', 'org_name', 'Default')
-            case "Guatemala":
+        # upper para no sufrir casos por el case sensitive
+        loupper = data.get('organization_id').upper()
+        match loupper:
+            case "ESTADOS UNIDOS":
                 location_id = pattern('Location', 'name', 'Default')
-            case "El Salvador":
-                location_id = pattern('Location', 'org_name', data['location_id'])
-            case "Honduras":
-                location_id = pattern('Location', 'org_name', data['location_id'])
-            case "Nicaragua":
-                location_id = pattern('Location', 'org_name', data['location_id'])
-            case "Costa Rica":
-                location_id = pattern('Location', 'org_name', 'Default') 
+            case "GUATEMALA":
+                location_id = pattern('Location', 'name', 'Default')
+            case "EL SALVADOR":
+                location_id = pattern('Location', 'org_name', data['organization_id'])
+            case "HONDURAS":
+                location_id = pattern('Location', 'org_name', data['organization_id'])
+            case "NICARAGUA":
+                location_id = pattern('Location', 'org_name', data['organization_id'])
+            case "COSTA RICA":
+                location_id = pattern('Location', 'name', 'Default') 
             case _:
                 location_id = pattern('Location', 'name', 'Default')
 
@@ -102,6 +96,14 @@ def clear(data):
         else:
             data['location_id'] = None
 
+    # Obtener el dato de la organización
+    if data.get('organization_id'):
+        organization_id = pattern('Organization', 'name', data['organization_id'])
+        if organization_id:
+            data['organization_id'] = organization_id
+        else:
+            data['organization_id'] = None
+    
     # Obtener el dato de la marca
     if data.get('brand_id'):
         brand_id = pattern('Brand', 'name', data['brand_id'])
@@ -135,11 +137,27 @@ def clear(data):
             data['os_version_id'] = None
 
     # Guardar el equipo con la data setteada 
-    equipo = Computer.objects.create(
-        **data
+    equipo = Computer.objects.get_or_create(
+       serialnumber = data['serialnumber'],
+        defaults={
+            'name': data.get('name'), 
+            'organization_id': data.get('organization_id'),
+            'location_id': data.get('location_id'),
+            'brand_id': data.get('brand_id'),
+            'model_id': data.get('model_id'),
+            'osfamily_id': data.get('osfamily_id'),
+            'type': data.get('type'),
+            'cpu': data.get('cpu'),
+            'os_version_id': data.get('os_version_id'),
+            'status': data.get('status'),
+            'ram': data.get('ram'),
+            'description': data.get('description'),
+            'move2production': data.get('move2production'),
+            'purchase_date': data.get('purchase_date'),
+            'end_of_warranty': data.get('end_of_warranty'),
+        }
     )
-
-    logger.info(f'Equipo limpieado y guardado efectivamente: {equipo.serialnumber}')
+    logger.info(f'Equipo limpiado y guardado efectivamente: {data['serialnumber']}')
 
 
 def look(sn):
@@ -181,9 +199,9 @@ def look(sn):
     if response.status_code == 200: 
         if response_json['code'] == 0:
             if response_json['message'] != "Found: 1":
-                return True
-            else:
                 return False
+            else:
+                return True
 
 
 def insert(): 
@@ -191,7 +209,7 @@ def insert():
         computers = Computer.objects.all()
 
         if not computers.exists():
-           logger.info('Error, no existen computadoras')
+           logger.error('No hay computadoras para procesar')
 
         for computer in computers:
             # Preparando los datos extraídos
@@ -338,4 +356,3 @@ def insert():
             except Exception as e:
                 logger.error(f"Error fatal para {computer.serialnumber}: {e}, la API responde: {itop_response['message']}")   
 
-    
