@@ -175,7 +175,7 @@ def look(sn):
         'Authorization': f'Basic {encoded_credentials}'
     }
 
-    # Petición según las necesidades
+    # Petición para saber si existe en el servicio
     simple_data = {
         "operation": "core/get",
         "class": "PC",
@@ -271,6 +271,7 @@ def insert():
                 'Content-Type': 'application/json',
                 'Authorization': f'Basic {encoded_credentials}'
             }
+
             # Enviar la url completa 
             url_base = f"{itop_url}&{encoded_json_data}"
             
@@ -305,6 +306,7 @@ def insert():
 
                     # Validación más detallada según el error que devuelva Itop
                     if itop_response['code'] == 0: 
+
                         # Procesar respuesta exitosa
                         historial_computer, created = HistorialComputer.objects.get_or_create(
                             serialnumber=computer.serialnumber,
@@ -345,8 +347,12 @@ def insert():
 
                         # Eliminar la computadora procesada
                         computer.delete()
-                        
-                        logger.info(f"Computadora {computer.serialnumber} fue agregada correctamente")
+                        print(itop_response_str)
+                        if 'created' in itop_response_str:
+                            logger.info(f"Computadora {computer.serialnumber} fue agregada correctamente")
+                        else:
+                            logger.info(f"Computadora {computer.serialnumber} fue actualizada correctamente")
+
                     else:
                         logger.error(f"Error al procesar {computer.serialnumber}, {itop_response['message']} código: {itop_response['code']}")
                 else: 
