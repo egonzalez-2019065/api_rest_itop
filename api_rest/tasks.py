@@ -254,7 +254,7 @@ def insert():
             # Convertirlo a JSON
             json_data = json.dumps(data)
 
-            # Preparando la URl   
+            # Preparando la URL  
             encoded_json_data = urlencode({'json_data': json_data})
 
             # Preparación de las credenciales para agregarlas a los headers
