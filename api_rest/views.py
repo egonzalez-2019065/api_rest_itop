@@ -111,6 +111,8 @@ class CostumTokenObtainPairView(APIView):
     # Función que obtiene el token y retorna un JWT 
     def post(self, request): 
         token = request.headers.get('token')
+        secretKey = request.headers.get('signature')
+        print("Esta es la llave secreta", secretKey)
         try:
             api_key = APITok.objects.get(key=token)
         except APITok.DoesNotExist:
