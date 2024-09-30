@@ -1,4 +1,8 @@
 # Importaciones del framework
+import base64
+import hashlib
+import hmac
+import os
 import re
 from django.contrib.auth.models import User
 from .models import BlacklistedAccessToken, Computer, TokenGenerated, APITok
@@ -33,7 +37,7 @@ class ComputerViewSet(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     # Campos que no deberían actualizarse
-    protected_fields = ['organization_id', 'location_id', 'brand_id', 'model_id', 'osfamily_id', 'os_version_id']
+    protected_fields = ['organization_id', 'location_id', 'brand_id', 'model_id', 'osfamily_id', 'os_version_id', 'move2production', 'purchase_date', 'end_of_warranty']
     
     def post(self, request, *args, **kwargs):
         # Procesar la data primero
@@ -77,7 +81,7 @@ class ComputerViewSet(APIView):
     def create_computer(self, data, token):
         serializer = ComputerSerializer(data=data, context={'request': self.request})
         if serializer.is_valid():
-            async_task('api_rest.tasks.clear', data) # Iniciar la tarea asíncronica para limpiar la data
+            async_task('api_rest.tasks.task_scraping.put_dates', data) # Iniciar la tarea asincrónica para obtener las fechas
             #self._blacklist_token(token) 
             return Response({"message": "Equipo creado exitosamente"}, 201)
         return Response(serializer.errors, status=400)  # Retornar errores de validación
@@ -91,6 +95,7 @@ class ComputerViewSet(APIView):
             return Response({"message": "Error al mandar el token a la lista negra"}, 400)
         
 class CostumTokenObtainPairView(APIView):
+   
     '''
     #
     #   Comentada debido al cambio en la forma en que se válida el token (Documentación)
@@ -108,25 +113,53 @@ class CostumTokenObtainPairView(APIView):
         return Response({'access': access_token})
     '''
 
+   
+
+    # Generando una firma desde el API para la comparación de las firmas entre el ejecutable y el API
+    def generate_signature(self, secret, data):
+        signature = hmac.new(secret.encode(), data.encode(), hashlib.sha256).digest()
+        return base64.b64encode(signature).decode()
+
     # Función que obtiene el token y retorna un JWT 
     def post(self, request): 
-        token = request.headers.get('token')
-        secretKey = request.headers.get('signature')
-        print("Esta es la llave secreta", secretKey)
-        try:
-            api_key = APITok.objects.get(key=token)
-        except APITok.DoesNotExist:
-            return Response({"Token no válido"}, 401)
-        except Exception as e:
-            return Response({"Error al intentar generar el token"}, 500) 
-        
-        # Creación del JWT
-        access = AccessToken.for_user(api_key.user)
-        TokenGenerated.objects.create(token = access)
-        return Response({
-            'access': f"{access}",
-        })
+        # Variables de entorno
+        self.secret_key = os.getenv("SECRET_KEY")
 
+        # Párametros del header
+        self.token = request.headers.get('token')
+        self.client_id = request.headers.get('client')
+        self.timestamp = request.headers.get('timestamp')
+        self.client_signature = request.headers.get('signature')
+
+        # Comprobaciones
+        print("Esta es la llave secreta", self.client_signature)
+        print("Este es el cliente va botas", self.client_id)
+        print("Este es el timestamp", self.timestamp)
+
+        # Comprobar que la solicitud viene solo de un ejecutable
+        if not self.token or not self.client_signature or not self.client_id or not self.timestamp:
+            return Response({"error: Datos incompletos en la petición"}, 400)
+        
+        # Creando la firma para verificar si coinciden
+        self.expected_signature = self.generate_signature(self.secret_key, f"{self.client_id}{self.timestamp}")
+
+        if not hmac.compare_digest(self.expected_signature, self.client_signature):
+            return Response({"error": "La firma ingresada es inválida"}, 403)
+
+        # Verificando que el token sea válido
+        try:
+            api_key = APITok.objects.get(key=self.token)
+             # Creación del JWT
+            access = AccessToken.for_user(api_key.user)
+            TokenGenerated.objects.create(token = access)
+            return Response({
+                'access': f"{access}",
+            })
+        except APITok.DoesNotExist:
+            return Response({"error: Token no válido"}, 401)
+        except Exception as e:
+            return Response({"error: Hubo un problema al intentar generar el token"}, 500)  
+       
 
 '''
 #
