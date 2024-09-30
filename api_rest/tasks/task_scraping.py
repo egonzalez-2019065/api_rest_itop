@@ -65,17 +65,22 @@ def put_dates(data):
                         print(data)
                         async_task('api_rest.tasks.task_clean_data.clear', data)
                     else:
+                        async_task('api_rest.tasks.task_clean_data.clear', data)
                         logging.error("No se encontraron suficientes elementos de propiedad.")
                         print('entró al else')
 
                 except Exception as e:
+                    async_task('api_rest.tasks.task_clean_data.clear', data)
                     logging.error(f"Error obteniendo las fechas {e}")
                     print('entró en error')
                 finally:
+                    async_task('api_rest.tasks.task_clean_data.clear', data)
                     if driver:
                         driver.quit()
             else: 
                 logging.error("La computadora no era de la marca esperada")
+                async_task('api_rest.tasks.task_clean_data.clear', data)
+
         else: 
             async_task('api_rest.tasks.task_clean_data.clear', data)
 
