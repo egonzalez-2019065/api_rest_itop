@@ -48,13 +48,15 @@ class ComputerViewSet(APIView):
             token = auth_header.split(' ')[1]  # Extraer solo el token sin 'Bearer '
         if not token:
             return Response({"error": "Token no proporcionado"}, 400)
-
+        
+        # Obtener el número de serie
+        serial_number = data.get('serialnumber')
+        if not serial_number:
+            self._blacklist_token(token)
+            return Response({"error": "Número de serie no proporcionado"}, 400)
+        
         try:
-            # Obtener el número de serie
-            serial_number = data.get('serialnumber')
-            if not serial_number:
-                return Response({"error": "Número de serie no proporcionado"}, 400)
-
+            
             # Intentar obtener la computadora si es que existe
             try:
                 computer = Computer.objects.get(serialnumber=serial_number)
@@ -62,8 +64,8 @@ class ComputerViewSet(APIView):
             except Computer.DoesNotExist:
                 return self.create_computer(data, token)
         except Exception as e:
-            #self._blacklist_token(token)
-            return Response({"error": f"No se pudo procesar al máquina {e}"}, 400)
+            self._blacklist_token(token)
+            return Response({"error": f"No se pudo procesar la máquina {e}"}, 400)
     
     # Actualizar una computadora existente
     def update_computer(self, computer, data, token):
@@ -82,7 +84,7 @@ class ComputerViewSet(APIView):
         serializer = ComputerSerializer(data=data, context={'request': self.request})
         if serializer.is_valid():
             async_task('api_rest.tasks.task_scraping.put_dates', data) # Iniciar la tarea asincrónica para obtener las fechas
-            #self._blacklist_token(token) 
+            self._blacklist_token(token) 
             return Response({"message": "Equipo creado exitosamente"}, 201)
         return Response(serializer.errors, status=400)  # Retornar errores de validación
 
