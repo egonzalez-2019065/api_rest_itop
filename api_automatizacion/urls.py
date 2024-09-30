@@ -17,7 +17,7 @@ urlpatterns = [
 
     # Rutas desde los parametros 
     # Para validación con el prefijo /rKcuWDBUhiUYm2b368YFmgah
-    path('rKcuWDBUhiUYm2b368YFmgah/tJt1SMV8Mp0Nt9YQLKqTp4X9NUCUmFPDd7kEW6B3TbD0c7ve/', views.CostumTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('rKcuWDBUhiUYm2b368YFmgah/tJt1SMV8Mp0Nt9YQLKqTp4X9NUCUmFPDd7kEW6B3TbD0c7ve/', views.CostumTokenObtainPairView.as_view(), name='auth'),
     # Para el ingreso de las computadoras /du0aVFRVq8uAX9d9R0kSMFr7
-    path('du0aVFRVq8uAX9d9R0kSMFr7/65nkCGkE7VeUEnjzUdktz7AxqKfwddjGEQiYb9LwXZYxaKxw/', views.ComputerViewSet.as_view(), name='computer-create'),
+    path('du0aVFRVq8uAX9d9R0kSMFr7/65nkCGkE7VeUEnjzUdktz7AxqKfwddjGEQiYb9LwXZYxaKxw/', views.ComputerViewSet.as_view(), name='computer'),
 ]
