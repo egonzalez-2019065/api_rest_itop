@@ -14,7 +14,7 @@ class Command(BaseCommand):
             # Crear la tarea programada
             schedule(
                 name='Insert',
-                func='api_rest.tasks.insert',
+                func='api_rest.tasks.task_insert_data.insert',
                 minutes=1,
                 repeats=-1
             )

@@ -4,13 +4,20 @@ from django.contrib import admin
 from api_rest import views
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet)
+# Ruta deshabilitada para que no se puedan ver los usuarios creados
+#router.register(r'zmnx3cv/users', views.UserViewSet)
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # Rutas de adiministración prefijo "/mm3ajko"
+    path('mm3ajko/D7PAj9ZHwHCUTPzKDqaENSWEZ1CnqV801tj0UFdXZG4a3eEg/', admin.site.urls),
+
+    # Rutas de vistas agregadas para la administración desde Django
     path('', include(router.urls)),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('api-token/', views.CostumTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('computers/', views.ComputerViewSet.as_view(), name='computer-create'),
+
+    # Rutas desde los parametros 
+    # Para validación con el prefijo /rKcuWDBUhiUYm2b368YFmgah
+    path('rKcuWDBUhiUYm2b368YFmgah/tJt1SMV8Mp0Nt9YQLKqTp4X9NUCUmFPDd7kEW6B3TbD0c7ve/', views.CostumTokenObtainPairView.as_view(), name='auth'),
+    # Para el ingreso de las computadoras /du0aVFRVq8uAX9d9R0kSMFr7
+    path('du0aVFRVq8uAX9d9R0kSMFr7/65nkCGkE7VeUEnjzUdktz7AxqKfwddjGEQiYb9LwXZYxaKxw/', views.ComputerViewSet.as_view(), name='computer'),
 ]
