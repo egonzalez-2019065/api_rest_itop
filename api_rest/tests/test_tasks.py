@@ -2,14 +2,11 @@ from unittest.mock import MagicMock
 from django.test import TestCase, Client
 from unittest.mock import patch
 from rest_framework_simplejwt.tokens import RefreshToken
-from api_rest.tasks import clear
+from api_rest.tasks.task_clean_data import clear
 from api_rest.models import Computer, HistorialComputer, SerialAndIDItop
 from django.contrib.auth.models import User
-from api_rest.tasks import insert
+from api_rest.tasks.task_insert_data import insert
 import os
-
-
-
 
 
 class ComputerTaskTest(TestCase):
@@ -33,6 +30,7 @@ class ComputerTaskTest(TestCase):
             'purchase_date': '2024-01-01',
             'end_of_warranty': '2025-01-01'
         }
+
 
     def test_task_insert_puters(self):
         clear(self.data)
@@ -132,8 +130,8 @@ class ServiceInsertTest(TestCase):
         os.environ['PASSWORD_ITOP'] = 'mockpassword'
 
     # Test para ver si se crean las computadoras en el servicio
-    @patch('api_rest.tasks.requests.request')
-    @patch('api_rest.tasks.look')
+    @patch('api_rest.tasks.task_insert_data.requests.request')
+    @patch('api_rest.tasks.task_insert_data.look')
     def test_insert_computer_success(self, mock_look, mock_request):
 
         id_counter = 1
@@ -162,8 +160,8 @@ class ServiceInsertTest(TestCase):
         self.assertEqual(Computer.objects.count(), 0)
 
     # Test para validar el funcionamiento si las computadoras no se crean en el servicio
-    @patch('api_rest.tasks.requests.request')
-    @patch('api_rest.tasks.look')
+    @patch('api_rest.tasks.task_insert_data.requests.request')
+    @patch('api_rest.tasks.task_insert_data.look')
     def test_insert_computer_error(self, mock_look, mock_request):
 
         def mock_api_response(*args, **kwargs):
@@ -189,8 +187,8 @@ class ServiceInsertTest(TestCase):
 
 
     # Test para ver si actualizan las computadoras en el servicio
-    @patch('api_rest.tasks.requests.request')
-    @patch('api_rest.tasks.look')
+    @patch('api_rest.tasks.task_insert_data.requests.request')
+    @patch('api_rest.tasks.task_insert_data.look')
     def test_update_computer(self, mock_look, mock_request):
 
         # Computadoras ya existentes
@@ -220,6 +218,7 @@ class ServiceInsertTest(TestCase):
 
         self.assertEqual(Computer.objects.count(), 0)   
     
+
 
 
 
