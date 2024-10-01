@@ -1,0 +1,37 @@
+
+services:
+  web:
+    build: .  # Construye la imagen desde el Dockerfile en el directorio actual
+    command: gunicorn api_automatizacion.wsgi:application --bind 0.0.0.0:8000  # Comando para ejecutar el servidor Gunicorn
+    volumes:
+      - .:/app  # Monta el directorio actual en el contenedor en /app
+    ports:
+      - "8000:8000"  # Expone el puerto 8000 del contenedor en el puerto 8000 del host
+    env_file:
+      - .env  # Carga las variables de entorno desde el archivo .env
+    depends_on:
+      - db  # Asegura que el servicio db esté en marcha antes de iniciar este servicio
+      - djangoq  # Asegura que el servicio djangoq esté en marcha antes de iniciar este servicio
+
+  djangoq:
+    build: .  # Construye la imagen desde el Dockerfile en el directorio actual
+    command: python manage.py qcluster  # Comando para ejecutar el clúster de Django Q
+    volumes:
+      - .:/app  # Monta el directorio actual en el contenedor en /app
+    env_file:
+      - .env  # Carga las variables de entorno desde el archivo .env
+    depends_on:
+      - db  # Asegura que el servicio db esté en marcha antes de iniciar este servicio
+
+  db:
+    image: mysql:8.0  # Usa la imagen oficial de MySQL versión 8.0
+    environment:
+      MYSQL_DATABASE: api_rest  # Crea una base de datos llamada api_rest
+      MYSQL_USER: db_user_api  # Crea un usuario llamado db_user_api
+      MYSQL_PASSWORD: S2UjmhNDxZhu9ZSar228urD  # Establece la contraseña para el usuario
+      MYSQL_ROOT_PASSWORD: A4SQL3qUPPS3z77ij7fjlñ  # Establece la contraseña para el root de MySQL
+    ports:
+      - "3307:3306"  # Expone el puerto 3306 del contenedor en el puerto 3307 del host
+
+volumes:
+  db_data:  # Define un volumen persistente llamado db_data
