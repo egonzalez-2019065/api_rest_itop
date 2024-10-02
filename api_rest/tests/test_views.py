@@ -44,7 +44,7 @@ class ComputerViewSetTest(TestCase):
 
         # Validaciones
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['message'], 'Equipo creado exitosamente')
+        self.assertEqual(response.data['message'], 'Equipo creado exitosamente.')
         self.assertEqual(BlacklistedAccessToken.objects.count(), 1) 
         mock_async_task.assert_called_once()
         self.assertEqual(BlacklistedAccessToken.objects.count(), 1)
@@ -61,7 +61,7 @@ class ComputerViewSetTest(TestCase):
 
         # Validaciones
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['error'], 'Número de serie no proporcionado')
+        self.assertEqual(response.data['error'], 'Número de serie no proporcionado.')
         self.assertEqual(BlacklistedAccessToken.objects.count(), 1)
 
 
@@ -81,7 +81,7 @@ class ComputerViewSetTest(TestCase):
 
         # Validaciones
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['message'], 'Equipo actualizado correctamente')
+        self.assertEqual(response.data['message'], 'Equipo actualizado correctamente.')
         self.assertEqual(BlacklistedAccessToken.objects.count(), 1)
 
 

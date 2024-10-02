@@ -47,7 +47,6 @@ def look(sn):
     
     # Solicitud al API  
     response = requests.request("POST", url_base, headers=headers)
-    logger.info(response.text)
 
     # Convirtiendo en json la respuesta
     response_json = response.json()
@@ -64,7 +63,7 @@ def insert():
         computers = Computer.objects.all()
 
         if not computers.exists():
-           logger.error('No hay computadoras para procesar')
+           logger.error(" No hay computadoras para procesar.")
 
         for computer in computers:
             # Preparando los datos extraídos
@@ -133,7 +132,6 @@ def insert():
             # Enviar la petición a iTop
             try:
                 response = requests.request("POST", url_base, headers=headers)
-                print(f'Respuesta Itop: {response.text}')
 
                 # Convierte la respuesta a un json
                 itop_response = response.json()
@@ -202,19 +200,18 @@ def insert():
 
                         # Eliminar la computadora procesada
                         computer.delete()
-                        print(itop_response_str)
                         if 'created' in itop_response_str:
-                            logger.info(f"Computadora {computer.serialnumber} fue agregada correctamente")
+                            logger.info(f" Computadora {computer.serialnumber} fue agregada correctamente en el servicio.")
                         else:
-                            logger.info(f"Computadora {computer.serialnumber} fue actualizada correctamente")
+                            logger.info(f" Computadora {computer.serialnumber} fue actualizada correctamente en el servicio.")
 
                     else:
-                        logger.error(f"Error al procesar {computer.serialnumber}, {itop_response['message']} código: {itop_response['code']}")
+                        logger.error(f" Error al intentar agregar {computer.serialnumber}, {itop_response['message']} código: {itop_response['code']}")
                 else: 
-                    logger.error(f"Error al procesar {computer.serialnumber}, {response.text} código: {response.status_code}")
+                    logger.error(f" Error al intentar agregar {computer.serialnumber}, {response.text} código: {response.status_code}")
             except requests.RequestException as req_err:
-                logger.error(f"Error al realizar la petición para {computer.serialnumber}: {req_err}")
+                logger.error(f" Error al realizar la petición para {computer.serialnumber}: {req_err}")
             except Exception as e:
-                logger.error(f"Error fatal para {computer.serialnumber}: {e}, la API responde: {itop_response['message']}")   
+                logger.error(f" Error fatal para {computer.serialnumber}: {e}, la API responde: {itop_response['message']}")   
 
 
