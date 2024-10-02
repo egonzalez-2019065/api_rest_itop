@@ -1,5 +1,5 @@
 # Usa una imagen base oficial de Python
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
@@ -7,12 +7,14 @@ WORKDIR /app
 # Copia el archivo de requerimientos
 COPY requirements.txt .
 
-# Insala las dependencias para mysql 
+# Instala las dependencias para MySQL 
 RUN apt-get update && apt-get install -y \
     build-essential \
     default-libmysqlclient-dev \
+    firefox \
     pkg-config \
-    && apt-get clean
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instala las dependencias del proyecto
 RUN pip install --no-cache-dir -r requirements.txt
@@ -22,6 +24,3 @@ COPY . .
 
 # Expone el puerto que usará Django
 EXPOSE 8000
-
-# Comando para correr la aplicación
-CMD ["gunicorn", "manage.py", "runserver", "0.0.0.0:8000"]

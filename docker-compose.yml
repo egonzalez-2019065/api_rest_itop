@@ -2,7 +2,7 @@
 services:
   web:
     build: .  # Construye la imagen desde el Dockerfile en el directorio actual
-    command: gunicorn api_automatizacion.wsgi:application --bind 0.0.0.0:8000  # Comando para ejecutar el servidor Gunicorn
+    command: ["gunicorn", "api_automatizacion.wsgi:application", "--bind", "0.0.0.0:8000"]  # Comando para ejecutar el servidor Gunicorn
     volumes:
       - .:/app  # Monta el directorio actual en el contenedor en /app
     ports:
@@ -17,6 +17,7 @@ services:
     build: .  # Construye la imagen desde el Dockerfile en el directorio actual
     command: python manage.py qcluster  # Comando para ejecutar el clúster de Django Q
     volumes:
+      - ./staticfiles:/app/staticfiles  # Volumen para los archivos estáticos ya generados
       - .:/app  # Monta el directorio actual en el contenedor en /app
     env_file:
       - .env  # Carga las variables de entorno desde el archivo .env
