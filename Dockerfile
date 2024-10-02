@@ -22,5 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia el código del proyecto a la imagen
 COPY . .
 
+# Recoger archivos estáticos
+RUN python manage.py collectstatic --noinput
+
 # Expone el puerto que usará Django
 EXPOSE 8000
