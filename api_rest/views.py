@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import hmac
+import logging
 import os
 import re
 from django.contrib.auth.models import User
@@ -18,6 +19,11 @@ from api_rest.serealizer import UserSerializer, ComputerSerializer
 
 # Configuración de las variables de entorno 
 load_dotenv()
+
+# Configuración para los logs
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     # Endpoint que devuelve los usuarios
@@ -47,16 +53,15 @@ class ComputerViewSet(APIView):
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]  # Extraer solo el token sin 'Bearer '
         if not token:
-            return Response({"error": "Token no proporcionado"}, 400)
+            return Response({"error": "Token no proporcionado."}, 400)
         
         # Obtener el número de serie
         serial_number = data.get('serialnumber')
         if not serial_number:
             self._blacklist_token(token)
-            return Response({"error": "Número de serie no proporcionado"}, 400)
+            return Response({"error": "Número de serie no proporcionado."}, 400)
         
         try:
-            
             # Intentar obtener la computadora si es que existe
             try:
                 computer = Computer.objects.get(serialnumber=serial_number)
@@ -76,17 +81,23 @@ class ComputerViewSet(APIView):
         if serializer.is_valid():
             serializer.save()
             self._blacklist_token(token)
-            return Response({"message": "Equipo actualizado correctamente"}, 200)
-        return Response(serializer.errors, status=400)  # Retornar errores de validación
+            logger.info(f" El equipo {computer.serialnumber} fue actualizado correctamente.")
+            return Response({"message": "Equipo actualizado correctamente."}, 200)
+        else: 
+            logger.error(f" Los datos no cumplian la estructura esperada, error: {serializer.errors}")
+            return Response(serializer.errors, status=400)  # Retornar errores de validación
 
     # Crear una nueva computadora
     def create_computer(self, data, token):
         serializer = ComputerSerializer(data=data, context={'request': self.request})
         if serializer.is_valid():
+            logger.info(f" El equipo {data['serialnumber']} fue recibido exitosamente, procesando para guardar.")
             async_task('api_rest.tasks.task_scraping.put_dates', data) # Iniciar la tarea asincrónica para obtener las fechas
             self._blacklist_token(token) 
-            return Response({"message": "Equipo creado exitosamente"}, 201)
-        return Response(serializer.errors, status=400)  # Retornar errores de validación
+            return Response({"message": "Equipo creado exitosamente."}, 201)
+        else: 
+            logger.error(f" Los datos no cumplían la estructura esperada, error: {serializer.errors}")
+            return Response(serializer.errors, status=400)  # Retornar errores de validación
 
     # Mandar el token a la lista negra e inválidarlo luego de su consumo
     def _blacklist_token(self, token):
@@ -94,7 +105,7 @@ class ComputerViewSet(APIView):
             AccessToken(token)
             BlacklistedAccessToken.objects.create(token=token)
         except Exception as e:
-            return Response({"message": "Error al mandar el token a la lista negra"}, 400)
+            return Response({"message": "Error al mandar el token a la lista negra."}, 400)
         
 class CostumTokenObtainPairView(APIView):
    
@@ -133,20 +144,15 @@ class CostumTokenObtainPairView(APIView):
         self.timestamp = request.headers.get('timestamp')
         self.client_signature = request.headers.get('signature')
 
-        # Comprobaciones
-        print("Esta es la llave secreta", self.client_signature)
-        print("Este es el cliente va botas", self.client_id)
-        print("Este es el timestamp", self.timestamp)
-
         # Comprobar que la solicitud viene solo de un ejecutable
         if not self.token or not self.client_signature or not self.client_id or not self.timestamp:
-            return Response({"error: Datos incompletos en la petición"}, 400)
+            return Response({"error: Datos incompletos en la petición."}, 400)
         
         # Creando la firma para verificar si coinciden
         self.expected_signature = self.generate_signature(self.secret_key, f"{self.client_id}{self.timestamp}")
 
         if not hmac.compare_digest(self.expected_signature, self.client_signature):
-            return Response({"error": "La firma ingresada es inválida"}, 403)
+            return Response({"error": "La firma ingresada es inválida."}, 403)
 
         # Verificando que el token sea válido
         try:
@@ -158,12 +164,12 @@ class CostumTokenObtainPairView(APIView):
                 'access': f"{access}",
             })
         except APITok.DoesNotExist:
-            return Response({"error: Token no válido"}, 401)
+            return Response({"error: Token no válido."}, 401)
         except Exception as e:
-            return Response({"error: Hubo un problema al intentar generar el token"}, 500)  
+            return Response({"error: Hubo un problema al intentar generar el token."}, 500)  
        
 
-'''
+
 #
 #   Comentada debido ya que su uso es únicamente si se quisiera crear un token para un usuario, 
 #       en vez de utilizar sus credenciales
@@ -190,15 +196,14 @@ class Prueba:
         try:
             user = User.objects.get(username=username)
             token = Prueba.generate_unique_token(user)
-            print("Token generado:", token)
+            logger.info( "Token generado", token)
         except User.DoesNotExist:
-            print("Usuario no encontrado.")   
+            logger.error( "Usuario no encontrado.")   
 
-#
-#   Comando para ejecutarla en la shell: 
-#       from api_rest.views import Prueba  
-#       Prueba.generate_and_print_token('user_example') -> Colocar un usuario existente en la DB	
-#  
+'''
+    Comando para ejecutarla en la shell: 
+    from api_rest.views import Prueba  
+    Prueba.generate_and_print_token('user_example') -> Colocar un usuario existente en la DB	
 '''
 
 
