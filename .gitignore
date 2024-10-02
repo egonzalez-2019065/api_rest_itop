@@ -7,4 +7,5 @@ env
 # Ignora los archivos de ejecución 
 __pycache__
 
-
+# Ignorar los archivos creados para el css y javascript
+/staticfiles
