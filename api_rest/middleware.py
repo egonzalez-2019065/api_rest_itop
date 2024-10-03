@@ -1,7 +1,7 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.core.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import AccessToken
-from .models import BlacklistedAccessToken
+from .models import AuthBlocked
 
 class CheckBlacklistedAccessTokenMiddleware(MiddlewareMixin):
     def process_request(self, request):
@@ -10,7 +10,7 @@ class CheckBlacklistedAccessTokenMiddleware(MiddlewareMixin):
             token = auth_header.split(' ')[1] # Guarda únicamente el token
             try:
                 AccessToken(token)  # Valida el token
-                if BlacklistedAccessToken.objects.filter(token=token).exists():
+                if AuthBlocked.objects.filter(token=token).exists():
                     raise PermissionDenied("El token está en la lista negra")
             except Exception as e:
                 raise PermissionDenied("Token inválido")
