@@ -189,9 +189,9 @@ class Prueba:
         try:
             user = User.objects.get(username=username)
             token = Prueba.generate_unique_token(user)
-            logger.info( "Token generado", token)
+            print( "Token generado", token)
         except User.DoesNotExist:
-            logger.error( "Usuario no encontrado.")   
+            print( "Usuario no encontrado.")   
 
 '''
     Comando para ejecutarla en la shell: 
