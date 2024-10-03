@@ -8,7 +8,7 @@ import re
 from urllib.parse import urlencode
 import requests
 
-from api_rest.models import Computer, HistorialComputer, SerialAndIDItop
+from api_rest.models import Computer, HistorialComputer, SerialANDIdService
 
 # Configuración para los logs
 logging.basicConfig(level=logging.INFO)
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def look(sn):
-    url = os.getenv('ITOP_URL') 
-    us = os.getenv('USER_ITOP')
-    pas = os.getenv('PASSWORD_ITOP') 
+    url = os.getenv('SERVICE_URL') 
+    us = os.getenv('USER_SERVICE')
+    pas = os.getenv('PASSWORD_SERVICE') 
 
     # Codificación de las credenciales
     credentials = f'{us}:{pas}'
@@ -112,9 +112,9 @@ def insert():
             encoded_json_data = urlencode({'json_data': json_data})
 
             # Preparación de las credenciales para agregarlas a los headers
-            itop_url = os.getenv('ITOP_URL')
-            username = os.getenv('USER_ITOP')
-            password = os.getenv('PASSWORD_ITOP')
+            url_service = os.getenv('SERVICE_URL') 
+            username = os.getenv('USER_SERVICE')
+            password = os.getenv('PASSWORD_SERVICE')
 
             # Codificación de las credenciales
             credentials = f'{username}:{password}'
@@ -127,38 +127,38 @@ def insert():
             }
 
             # Enviar la url completa 
-            url_base = f"{itop_url}&{encoded_json_data}"
+            url_base = f"{url_service}&{encoded_json_data}"
             
-            # Enviar la petición a iTop
+            # Enviar la petición al Servicio
             try:
                 response = requests.request("POST", url_base, headers=headers)
 
                 # Convierte la respuesta a un json
-                itop_response = response.json()
+                service_response = response.json()
 
-                # Validación de la respuesta general de Itop
+                # Validación de la respuesta general del servicio
                 if response.status_code == 200:
 
-                    # Guardar la computadora con el ID que devuelva Itop
+                    # Guardar la computadora con el ID que devuelva el servicio
                     # Convetir el diccionario a cadena de texto
-                    itop_response_str = str(itop_response)
+                    service_response_str = str(service_response)
 
                     # Buscarlo en la cadena de texto
-                    itop_id_match = re.search(r'PC::(\d+)', itop_response_str)
+                    service_id_match = re.search(r'PC::(\d+)', service_response_str)
 
                     # ID extraído
-                    itop_id_final = itop_id_match.group(1)
+                    service_id_final = service_id_match.group(1)
 
-                    # Guarda el id de la respuesta de Itop y el número de serie
-                    serial_number_instance, created = SerialAndIDItop.objects.get_or_create(
+                    # Guarda el id de la respuesta del servicio y el número de serie
+                    serial_number_instance, created = SerialANDIdService.objects.get_or_create(
                         serial_number=computer.serialnumber,  # Buscar por el número de serie
                         defaults = {
-                            'id_itop': itop_id_final  # Si no existe, crear con este id_itop
+                            'id_service': service_id_final  # Si no existe, crear con este id_service
                         }
                     )
 
-                    # Validación más detallada según el error que devuelva Itop
-                    if itop_response['code'] == 0: 
+                    # Validación más detallada según el error que devuelva el servicio
+                    if service_response['code'] == 0: 
 
                         # Procesar respuesta exitosa
                         historial_computer, created = HistorialComputer.objects.get_or_create(
@@ -200,18 +200,18 @@ def insert():
 
                         # Eliminar la computadora procesada
                         computer.delete()
-                        if 'created' in itop_response_str:
+                        if 'created' in service_response_str:
                             logger.info(f" Computadora {computer.serialnumber} fue agregada correctamente en el servicio.")
                         else:
                             logger.info(f" Computadora {computer.serialnumber} fue actualizada correctamente en el servicio.")
 
                     else:
-                        logger.error(f" Error al intentar agregar {computer.serialnumber}, {itop_response['message']} código: {itop_response['code']}")
+                        logger.error(f" Error al intentar agregar {computer.serialnumber}, {service_response['message']} código: {service_response['code']}")
                 else: 
                     logger.error(f" Error al intentar agregar {computer.serialnumber}, {response.text} código: {response.status_code}")
             except requests.RequestException as req_err:
                 logger.error(f" Error al realizar la petición para {computer.serialnumber}: {req_err}")
             except Exception as e:
-                logger.error(f" Error fatal para {computer.serialnumber}: {e}, la API responde: {itop_response['message']}")   
+                logger.error(f" Error fatal para {computer.serialnumber}: {e}, la API responde: {service_response['message']}")   
 
 

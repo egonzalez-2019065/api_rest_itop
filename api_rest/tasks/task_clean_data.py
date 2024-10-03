@@ -17,10 +17,9 @@ logger = logging.getLogger(__name__)
 
 # Función para hacer las diferentes peticiones según los datos del diccionario: data
 def pattern(class_name, look_to, field_value):
-    url = os.getenv('ITOP_URL') 
-    us = os.getenv('USER_ITOP')
-    pas = os.getenv('PASSWORD_ITOP') 
-
+    url = os.getenv('SERVICE_URL') 
+    us = os.getenv('USER_SERVICE')
+    pas = os.getenv('PASSWORD_SERVICE')
     # Codificación de las credenciales
     credentials = f'{us}:{pas}'
     encoded_credentials = base64.b64encode(credentials.encode()).decode()

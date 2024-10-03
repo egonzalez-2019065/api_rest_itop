@@ -51,9 +51,9 @@ class HistorialComputer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-class SerialAndIDItop(models.Model):
+class SerialANDIdService(models.Model):
     serial_number = models.CharField(max_length=50, unique=True)
-    id_itop = models.PositiveIntegerField(unique=True)
+    service_id = models.PositiveIntegerField(unique=True)
 
 class APITok(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
