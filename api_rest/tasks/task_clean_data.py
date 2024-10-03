@@ -49,7 +49,6 @@ def pattern(class_name, look_to, field_value):
     
     # Solicitud al API  
     response = requests.request("POST", url_base, headers=headers)
-    logger.info(response.text)
 
     # Convirtiendo en json la respuesta
     response_json = response.json()
@@ -155,4 +154,4 @@ def clear(data):
             'end_of_warranty': data.get('end_of_warranty'),
         }
     )
-    logger.info(f'Equipo limpiado y guardado efectivamente: {data['serialnumber']}')
+    logger.info(f' El equipo {data['serialnumber']} procesado y guardado efectivamente.')

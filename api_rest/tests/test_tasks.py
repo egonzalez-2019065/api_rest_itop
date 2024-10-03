@@ -217,20 +217,3 @@ class ServiceInsertTest(TestCase):
             self.assertTrue(HistorialComputer.objects.filter(serialnumber=computer.serialnumber).exists())
 
         self.assertEqual(Computer.objects.count(), 0)   
-    
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-        
-        
