@@ -6,7 +6,7 @@ import logging
 import os
 import re
 from django.contrib.auth.models import User
-from .models import BlacklistedAccessToken, Computer, TokenGenerated, APITok
+from .models import AuthBlocked, PComputer, AuthGenerated, UserAuth
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -38,7 +38,7 @@ class ComputerViewSet(APIView):
     http_method_names = ['post']
 
     # Endpoint que permite la creación de una nueva computadora
-    queryset = Computer.objects.all()
+    queryset = PComputer.objects.all()
     serializer_class = ComputerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -64,9 +64,9 @@ class ComputerViewSet(APIView):
         try:
             # Intentar obtener la computadora si es que existe
             try:
-                computer = Computer.objects.get(serialnumber=serial_number)
+                computer = PComputer.objects.get(serialnumber=serial_number)
                 return self.update_computer(computer, data, token)
-            except Computer.DoesNotExist:
+            except PComputer.DoesNotExist:
                 return self.create_computer(data, token)
         except Exception as e:
             self._blacklist_token(token)
@@ -103,7 +103,7 @@ class ComputerViewSet(APIView):
     def _blacklist_token(self, token):
         try:
             AccessToken(token)
-            BlacklistedAccessToken.objects.create(token=token)
+            AuthBlocked.objects.create(token=token)
         except Exception as e:
             return Response({"message": "Error al mandar el token a la lista negra."}, 400)
         
@@ -154,14 +154,14 @@ class CostumTokenObtainPairView(APIView):
 
         # Verificando que el token sea válido
         try:
-            api_key = APITok.objects.get(key=self.token)
+            api_key = UserAuth.objects.get(key=self.token)
              # Creación del JWT
             access = AccessToken.for_user(api_key.user)
-            TokenGenerated.objects.create(token = access)
+            AuthGenerated.objects.create(token = access)
             return Response({
                 'access': f"{access}",
             })
-        except APITok.DoesNotExist:
+        except UserAuth.DoesNotExist:
             return Response({"error: Token no válido."}, 401)
         except Exception as e:
             return Response({"error: Hubo un problema al intentar generar el token."}, 500)  
@@ -176,11 +176,11 @@ class Prueba:
         token = secrets.token_urlsafe(32)
 
         # Verifica si el token ya existe para evitar duplicados
-        while APITok.objects.filter(key=token).exists():
+        while UserAuth.objects.filter(key=token).exists():
             token = secrets.token_urlsafe(32)
 
         # Guarda el token en la base de datos
-        APITok.objects.create(key=token, user=user)
+        UserAuth.objects.create(key=token, user=user)
 
         return token
     

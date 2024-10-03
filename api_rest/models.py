@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from django.db import models
 
-class Computer(models.Model):
+class PComputer(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True, unique=True)
     organization_id = models.CharField(max_length=30, blank=True, null=True)
     location_id = models.CharField(max_length=30, blank=True, null=True)
@@ -21,17 +21,15 @@ class Computer(models.Model):
     purchase_date = models.DateField(blank=True, null=True)
     end_of_warranty = models.DateField(blank=True, null=True)
     
-class BlacklistedAccessToken(models.Model):
+class AuthBlocked(models.Model):
     token = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-class TokenGenerated(models.Model): 
+class AuthGenerated(models.Model): 
     token = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-from django.db import models
-
-class HistorialComputer(models.Model):
+class HistorialPComputer(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True, unique=True)
     organization_id = models.CharField(max_length=30, blank=True, null=True)
     location_id = models.CharField(max_length=30, blank=True, null=True)
@@ -51,11 +49,11 @@ class HistorialComputer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-class SerialANDIdService(models.Model):
+class SerialAndService(models.Model):
     serial_number = models.CharField(max_length=50, unique=True)
     service_id = models.PositiveIntegerField(unique=True)
 
-class APITok(models.Model):
+class UserAuth(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     key = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now=True)
