@@ -1,4 +1,4 @@
-from api_rest.models import Computer
+from api_rest.models import PComputer
 from dotenv import load_dotenv
 from urllib.parse import urlencode
 import json
@@ -133,7 +133,7 @@ def clear(data):
             data['os_version_id'] = None
 
     # Guardar el equipo con la data setteada 
-    Computer.objects.get_or_create(
+    PComputer.objects.get_or_create(
        serialnumber = data['serialnumber'],
         defaults={
             'name': data.get('name'), 

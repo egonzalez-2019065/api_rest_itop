@@ -8,7 +8,7 @@ import re
 from urllib.parse import urlencode
 import requests
 
-from api_rest.models import Computer, HistorialComputer, SerialANDIdService
+from api_rest.models import PComputer, HistorialPComputer, SerialAndService
 
 # Configuración para los logs
 logging.basicConfig(level=logging.INFO)
@@ -60,7 +60,7 @@ def look(sn):
 
 def insert(): 
         # Obtener todas las computadoras
-        computers = Computer.objects.all()
+        computers = PComputer.objects.all()
 
         if not computers.exists():
            logger.error(" No hay computadoras para procesar.")
@@ -150,7 +150,7 @@ def insert():
                     service_id_final = service_id_match.group(1)
 
                     # Guarda el id de la respuesta del servicio y el número de serie
-                    serial_number_instance, created = SerialANDIdService.objects.get_or_create(
+                    serial_number_instance, created = SerialAndService.objects.get_or_create(
                         serial_number=computer.serialnumber,  # Buscar por el número de serie
                         defaults = {
                             'id_service': service_id_final  # Si no existe, crear con este id_service
@@ -161,7 +161,7 @@ def insert():
                     if service_response['code'] == 0: 
 
                         # Procesar respuesta exitosa
-                        historial_computer, created = HistorialComputer.objects.get_or_create(
+                        historial_computer, created = HistorialPComputer.objects.get_or_create(
                             serialnumber=computer.serialnumber,
                             defaults={
                                 'name': computer.name,
