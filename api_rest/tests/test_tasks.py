@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 from unittest.mock import patch
 from rest_framework_simplejwt.tokens import RefreshToken
 from api_rest.tasks.task_clean_data import clear
-from api_rest.models import PComputer, HistorialPComputer, SerialAndService
+from api_rest.models import Data, PComputer, HistorialPComputer, SerialAndService
 from django.contrib.auth.models import User
 from api_rest.tasks.task_insert_data import insert
 import os
@@ -12,29 +12,27 @@ import os
 class ComputerTaskTest(TestCase):
  # Probar tarea asíncronica
     def setUp(self):
-        self.data = {
-            'serialnumber': 'PF33X004',
-            'name': 'Test Computer',
-            'organization_id': 'el salvador',
-            'location_id': 1,
-            'brand_id': 1,
-            'model_id': 1,
-            'osfamily_id': 1,
-            'os_version_id': 1,
-            'type': 'desktop',
-            'cpu': 'Intel i7',
-            'ram': 16,
-            'status': 'active',
-            'description': 'A test computer',
-            'move2production':'2024-01-01',
-            'purchase_date': '2024-01-01',
-            'end_of_warranty': '2025-01-01'
-        }
-
-
-    def test_task_insert_puters(self):
-        clear(self.data)
-
+       Data.objects.create(
+        serialnumber='PF33X004',
+        name='Test Computer',
+        organization_id='el salvador',
+        location_id='el salvador',
+        brand_id='Lenovo',
+        model_id='Thinkpad',
+        osfamily_id='Windows',
+        os_version_id='Pro 10',
+        type='desktop',
+        cpu='Intel i7',
+        ram=16,
+        status='production',
+        description='1000 GB y 20 disponibles',
+        move2production='2024-01-01',
+        purchase_date='2024-01-01',
+        end_of_warranty='2025-01-01'
+    )
+    def test_task_clear(self):
+        clear()
+        self.assertIsNone(Data.objects.filter(serialnumber = 'PF33X004').first())
         self.assertIsNotNone(PComputer.objects.filter(serialnumber = 'PF33X004').first())
         self.assertEqual(PComputer.objects.get().serialnumber, 'PF33X004')
         self.assertEqual(PComputer.objects.get().name, 'Test Computer')

@@ -4,24 +4,21 @@ import hashlib
 import hmac
 import logging
 import os
-import re
 from django.contrib.auth.models import User
-from .models import AuthBlocked, PComputer, AuthGenerated, UserAuth
+from .models import AuthBlocked, Data, AuthGenerated, UserAuth, PComputer
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.views import APIView
-from django_q.tasks import async_task
 from dotenv import load_dotenv
 
 # Serializadores
-from api_rest.serealizer import UserSerializer, ComputerSerializer
+from api_rest.serealizer import DataSerializer, UserSerializer, ComputerSerializer
 
 # Configuración de las variables de entorno 
 load_dotenv()
 
 # Configuración para los logs
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -38,8 +35,8 @@ class ComputerViewSet(APIView):
     http_method_names = ['post']
 
     # Endpoint que permite la creación de una nueva computadora
-    queryset = PComputer.objects.all()
-    serializer_class = ComputerSerializer
+    queryset = Data.objects.all()
+    serializer_class = DataSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     # Campos que no deberían actualizarse
@@ -63,36 +60,38 @@ class ComputerViewSet(APIView):
         
         try:
             # Intentar obtener la computadora si es que existe
-            try:
-                computer = PComputer.objects.get(serialnumber=serial_number)
-                return self.update_computer(computer, data, token)
-            except PComputer.DoesNotExist:
-                return self.create_computer(data, token)
+            computerReady = PComputer.objects.get(serialnumber=serial_number)
+            logger.info(f"El equipo {computerReady.serialnumber} ya existe en la BD, se procede a actualizar.")
+            return self.update_computer(computerReady, data, token)
+        except PComputer.DoesNotExist: 
+            logger.info(f"El equipo {serial_number} aún no ha sido agregado, se procede a crearla.")
+            return self.create_computer(data, token)
         except Exception as e:
+            logger.error(f"Error inesperado: {e}")
             self._blacklist_token(token)
-            return Response({"error": f"No se pudo procesar la máquina {e}"}, 400)
-    
+            return Response({"error": f"No se pudo procesar la máquina: {e}"}, 400)
+            
     # Actualizar una computadora existente
     def update_computer(self, computer, data, token):
         # Filtrar campos protegidos
         for field in self.protected_fields:
             data.pop(field, None)
-        serializer = ComputerSerializer(computer, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+        serializerUpdate = ComputerSerializer(computer, data=data, partial=True)
+        if serializerUpdate.is_valid():
+            serializerUpdate.save()
             self._blacklist_token(token)
             logger.info(f" El equipo {computer.serialnumber} fue actualizado correctamente.")
             return Response({"message": "Equipo actualizado correctamente."}, 200)
         else: 
-            logger.error(f" Los datos no cumplian la estructura esperada, error: {serializer.errors}")
-            return Response(serializer.errors, status=400)  # Retornar errores de validación
+            logger.error(f" Los datos no cumplian la estructura esperada, error: {serializerUpdate.errors}")
+            return Response(serializerUpdate.errors, status=400)  # Retornar errores de validación
 
     # Crear una nueva computadora
     def create_computer(self, data, token):
-        serializer = ComputerSerializer(data=data, context={'request': self.request})
+        serializer = DataSerializer(data=data, context={'request': self.request})
         if serializer.is_valid():
             logger.info(f" El equipo {data['serialnumber']} fue recibido exitosamente, procesando para guardar.")
-            async_task('api_rest.tasks.task_scraping.put_dates', data) # Iniciar la tarea asincrónica para obtener las fechas
+            serializer.save()
             self._blacklist_token(token) 
             return Response({"message": "Equipo creado exitosamente."}, 201)
         else: 
