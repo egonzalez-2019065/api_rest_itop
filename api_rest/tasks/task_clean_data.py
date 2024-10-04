@@ -1,4 +1,4 @@
-from api_rest.models import PComputer
+from api_rest.models import Data, PComputer
 from dotenv import load_dotenv
 from urllib.parse import urlencode
 import json
@@ -64,93 +64,78 @@ def pattern(class_name, look_to, field_value):
                 return id_final
             
 # Función para obtener los valores reales según el API 
-def clear(data):
-    
-    # Obtener el dato de la locación
-    if data.get('location_id'):
-        # upper para no sufrir casos por el case sensitive
-        loupper = data.get('organization_id').upper()
-        match loupper:
-            case "ESTADOS UNIDOS":
-                location_id = pattern('Location', 'name', 'Default')
-            case "GUATEMALA":
-                location_id = pattern('Location', 'name', 'Default')
-            case "EL SALVADOR":
-                location_id = pattern('Location', 'org_name', data['organization_id'])
-            case "HONDURAS":
-                location_id = pattern('Location', 'org_name', data['organization_id'])
-            case "NICARAGUA":
-                location_id = pattern('Location', 'org_name', data['organization_id'])
-            case "COSTA RICA":
-                location_id = pattern('Location', 'name', 'Default') 
-            case _:
-                location_id = pattern('Location', 'name', 'Default')
+def clear():
+    computersData = Data.objects.all()
+    if not computersData.exists():
+            logger.error(" No hay computadoras para procesar.")      
+    for computer in computersData:
+        # Obtener el dato de la locación
+        if computer.location_id:
+            # upper para no sufrir casos por el case sensitive
+            loupper = computer.organization_id.upper()
+            match loupper:
+                case "ESTADOS UNIDOS":
+                    location_id = pattern('Location', 'name', 'Default')
+                case "GUATEMALA":
+                    location_id = pattern('Location', 'name', 'Default')
+                case "EL SALVADOR":
+                    location_id = pattern('Location', 'org_name', computer.organization_id)
+                case "HONDURAS":
+                    location_id = pattern('Location', 'org_name', computer.organization_id)
+                case "NICARAGUA":
+                    location_id = pattern('Location', 'org_name', computer.organization_id)
+                case "COSTA RICA":
+                    location_id = pattern('Location', 'name', 'Default') 
+                case _:
+                    location_id = pattern('Location', 'name', 'Default')
 
-        # Settear el dato según el case
-        if location_id:
-            data['location_id'] = location_id
-        else:
-            data['location_id'] = None
+            # Settear el dato según el case
+            computer.location_id = location_id if location_id else None
 
-    # Obtener el dato de la organización
-    if data.get('organization_id'):
-        organization_id = pattern('Organization', 'name', data['organization_id'])
-        if organization_id:
-            data['organization_id'] = organization_id
-        else:
-            data['organization_id'] = None
-    
-    # Obtener el dato de la marca
-    if data.get('brand_id'):
-        brand_id = pattern('Brand', 'name', data['brand_id'])
-        if brand_id:
-            data['brand_id'] = brand_id
-        else:
-            data['brand_id'] = None
-    
-    # Obtener el dato del modelo
-    if data.get('model_id'):
-        model_id = pattern('Model', 'name', data['model_id'])
-        if model_id:
-            data['model_id'] = model_id
-        else:
-            data['model_id'] = None
-    
-    # Obtener el dato del OS
-    if data.get('osfamily_id'):
-        system = pattern('OSFamily', 'name', data['osfamily_id'])
-        if system:
-            data['osfamily_id'] = system
-        else:
-            data['osfamily_id'] = None
-    
-    # Obtener el dato de la versión del OS 
-    if data.get('os_version_id'):
-        version = pattern('OSVersion', 'name', data['os_version_id'])
-        if version:
-            data['os_version_id'] = version
-        else:
-            data['os_version_id'] = None
+        # Obtener el dato de la organización
+        if computer.organization_id:
+            organization_id = pattern('Organization', 'name', computer.organization_id)
+            computer.organization_id = organization_id if organization_id else None
+        
+        # Obtener el dato de la marca
+        if computer.brand_id:
+            brand_id = pattern('Brand', 'name', computer.brand_id)
+            computer.brand_id = brand_id if brand_id else None
+        
+        # Obtener el dato del modelo
+        if computer.model_id:
+            model_id = pattern('Model', 'name', computer.model_id)
+            computer.model_id = model_id if model_id else None
+        
+        # Obtener el dato del OS
+        if computer.osfamily_id:
+            system = pattern('OSFamily', 'name', computer.osfamily_id)
+            computer.osfamily_id = system if system else None
+        
+        # Obtener el dato de la versión del OS 
+        if computer.os_version_id:
+            version = pattern('OSVersion', 'name', computer.os_version_id)
+            computer.os_version_id = version if version else None
 
-    # Guardar el equipo con la data setteada 
-    PComputer.objects.get_or_create(
-       serialnumber = data['serialnumber'],
-        defaults={
-            'name': data.get('name'), 
-            'organization_id': data.get('organization_id'),
-            'location_id': data.get('location_id'), 
-            'brand_id': data.get('brand_id'),
-            'model_id': data.get('model_id'),
-            'osfamily_id': data.get('osfamily_id'),
-            'type': data.get('type'),
-            'cpu': data.get('cpu'),
-            'os_version_id': data.get('os_version_id'),
-            'status': data.get('status'),
-            'ram': data.get('ram'),
-            'description': data.get('description'),
-            'move2production': data.get('move2production'),
-            'purchase_date': data.get('purchase_date'),
-            'end_of_warranty': data.get('end_of_warranty'),
-        }
-    )
-    logger.info(f' El equipo {data['serialnumber']} procesado y guardado efectivamente.')
+        # Guardar el equipo con la data setteada 
+        PComputer.objects.get_or_create(
+            serialnumber=computer.serialnumber,
+            defaults={
+                'name': computer.name, 
+                'organization_id': computer.organization_id,
+                'location_id': computer.location_id, 
+                'brand_id': computer.brand_id,
+                'model_id': computer.model_id,
+                'osfamily_id': computer.osfamily_id,
+                'type': computer.type,
+                'cpu': computer.cpu,
+                'os_version_id': computer.os_version_id,
+                'status': computer.status,
+                'ram': computer.ram,
+                'description': computer.description,
+                'move2production': computer.move2production,
+                'purchase_date': computer.purchase_date,
+                'end_of_warranty': computer.end_of_warranty,
+            }
+        )
+        logger.info(f'El equipo {computer.serialnumber} procesado y guardado efectivamente.')
