@@ -83,8 +83,8 @@ user.save()
 
 **4.4. Genere un token para el usuario:**
 ```python
-from api_rest.views import Prueba
-Prueba.generate_and_print_token('user_example')
+from api_rest.views import GenerateToken
+GenerateToken.generate_and_print_token('user_example')
 ```
 guarde este token, con este token podrá validarse el ejecutable en la API.
 
