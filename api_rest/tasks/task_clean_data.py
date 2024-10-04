@@ -8,11 +8,12 @@ import base64
 import re
 import logging
 
+from api_rest.tasks.task_scraping import put_dates 
+
 # Variables de env
 load_dotenv()
 
 # Configuración para los logs 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Función para hacer las diferentes peticiones según los datos del diccionario: data
@@ -49,25 +50,35 @@ def pattern(class_name, look_to, field_value):
     # Solicitud al API  
     response = requests.request("POST", url_base, headers=headers)
 
-    # Convirtiendo en json la respuesta
-    response_json = response.json()
-    if response.status_code == 200: 
-        if response_json['code'] == 0:
-
-            # Buscarlo en la cadena de texto
-            response_str = str(response_json)
-            er = f"{class_name}::(\\d+)"
-            id = re.search(er, response_str)
-            if id: 
-                # ID extraído
-                id_final = id.group(1)
-                return id_final
-            
+    # Verifica el código de estado de la respuesta
+    if response.status_code == 200:
+        try:
+            # Convirtiendo en json la respuesta
+            response_json = response.json()
+            if response_json['code'] == 0:
+                # Buscarlo en la cadena de texto
+                response_str = str(response_json)
+                er = f"{class_name}::(\\d+)"
+                id = re.search(er, response_str)
+                if id: 
+                    # ID extraído
+                    id_final = id.group(1)
+                    return id_final
+            else:
+                logger.warning('No fue posible manejar la respuesta del API')
+                return None
+        except ValueError:
+            logger.error(f"Respuesta del API: {response.text}")
+            return None
+    else:
+        logger.error(f"Error en la solicitud al API: {response.status_code} - {response.text}")
+        return None
+                        
 # Función para obtener los valores reales según el API 
 def clear():
     computersData = Data.objects.all()
     if not computersData.exists():
-            logger.error(" No hay computadoras para procesar.")      
+            logger.warning("El proceso de limpieza de datos no fue iniciado, no hay registros.")
     for computer in computersData:
         # Obtener el dato de la locación
         if computer.location_id:
@@ -117,8 +128,17 @@ def clear():
             version = pattern('OSVersion', 'name', computer.os_version_id)
             computer.os_version_id = version if version else None
 
+        # Realiza el proceso de scraping
+        start_date, end_date = put_dates(computer)
+
+         # Asignar las fechas al objeto computer
+        if start_date and end_date:
+            computer.move2production = start_date
+            computer.purchase_date = start_date 
+            computer.end_of_warranty = end_date
+
         # Guardar el equipo con la data setteada 
-        PComputer.objects.get_or_create(
+        PComputer.objects.update_or_create(
             serialnumber=computer.serialnumber,
             defaults={
                 'name': computer.name, 
@@ -138,4 +158,5 @@ def clear():
                 'end_of_warranty': computer.end_of_warranty,
             }
         )
-        logger.info(f'El equipo {computer.serialnumber} procesado y guardado efectivamente.')
+        computer.delete()
+        logger.info(f'El equipo {computer.serialnumber} fue procesado y guardado efectivamente.')
