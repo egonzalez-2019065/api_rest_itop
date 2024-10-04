@@ -168,7 +168,7 @@ class CostumTokenObtainPairView(APIView):
 
 # Función provisional para crear un token:
 import secrets
-class Prueba: 
+class GenerateToken: 
     @staticmethod
     def generate_unique_token(user):
         # Genera un token único
@@ -187,7 +187,7 @@ class Prueba:
     def generate_and_print_token(username):
         try:
             user = User.objects.get(username=username)
-            token = Prueba.generate_unique_token(user)
+            token = GenerateToken.generate_unique_token(user)
             print( "Token generado", token)
         except User.DoesNotExist:
             print( "Usuario no encontrado.")   
