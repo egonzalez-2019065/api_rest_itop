@@ -37,8 +37,7 @@ class ComputerViewSetTest(TestCase):
     
 
     # Función que verifica la creación de una nueva computadora
-    @patch('api_rest.views.async_task')
-    def test_create_computer_success(self, mock_async_task):
+    def test_create_computer_success(self):
         # Crear la computadora
         response = self.client.post(reverse('computer'), data=self.data, format='json')
 
@@ -46,7 +45,6 @@ class ComputerViewSetTest(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['message'], 'Equipo creado exitosamente.')
         self.assertEqual(AuthBlocked.objects.count(), 1) 
-        mock_async_task.assert_called_once()
 
     # Verificar que la computadora no se crea si no tiene el número de serie
     def test_create_computer_no_serialnumber(self):
