@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    'django_q'
+    'django_apscheduler',
+
 ]
 
 MIDDLEWARE = [
@@ -101,7 +102,8 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'class': 'logging.StreamHandler',  
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
         },
     },
     'loggers': {
@@ -110,23 +112,20 @@ LOGGING = {
             'level': 'INFO', 
             'propagate': False,
         },
-        'django_q': {  
-            'handlers': ['console'],
-            'level': 'INFO',  
-            'propagate': False,
-        },
-        'myapp': {  
-            'handlers': ['console'], 
+        'apscheduler': {
+            'handlers': ['console'],  
             'level': 'INFO',
             'propagate': False,
         },
-        'urllib3': { 
-            'handlers': ['console'], 
-            'level': 'WARNING',
-            'propagate': False,
-        },
+        'api_rest': {
+            'handlers': ['console'],  
+            'level': 'INFO',
+            'propagate': True,
+        }
     }
 }
+
+
 WSGI_APPLICATION = 'api_automatization.wsgi.application'
 
 
