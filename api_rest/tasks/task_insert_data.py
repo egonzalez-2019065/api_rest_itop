@@ -11,7 +11,6 @@ import requests
 from api_rest.models import PComputer, HistorialPComputer, SerialAndService
 
 # Configuración para los logs
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +62,7 @@ def insert():
         computers = PComputer.objects.all()
 
         if not computers.exists():
-           logger.error(" No hay computadoras para procesar.")
+            logger.warning("No se inició el proceso de ingreso de equipos al servicio por falta de registros.")
 
         for computer in computers:
             # Preparando los datos extraídos
@@ -153,7 +152,7 @@ def insert():
                     serial_number_instance, created = SerialAndService.objects.get_or_create(
                         serial_number=computer.serialnumber,  # Buscar por el número de serie
                         defaults = {
-                            'id_service': service_id_final  # Si no existe, crear con este id_service
+                            'service_id': service_id_final  # Si no existe, crear con este id_service
                         }
                     )
 
