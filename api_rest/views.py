@@ -5,7 +5,7 @@ import hmac
 import logging
 import os
 from django.contrib.auth.models import User
-from .models import AuthBlocked, Data, AuthGenerated, UserAuth
+from .models import AuthBlocked, Data, AuthGenerated, UserAuth, PComputer
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from dotenv import load_dotenv
 
 # Serializadores
-from api_rest.serealizer import DataSerializer, UserSerializer
+from api_rest.serealizer import DataSerializer, UserSerializer, ComputerSerializer
 
 # Configuración de las variables de entorno 
 load_dotenv()
@@ -60,29 +60,31 @@ class ComputerViewSet(APIView):
         
         try:
             # Intentar obtener la computadora si es que existe
-            try:
-                computerData = Data.objects.get(serialnumber=serial_number)
-                return self.update_computer(computerData, data, token)
-            except Data.DoesNotExist:
-                return self.create_computer(data, token)
+            computerReady = PComputer.objects.get(serialnumber=serial_number)
+            logger.info(f"El equipo {computerReady.serialnumber} ya existe en la BD, se procede a actualizar.")
+            return self.update_computer(computerReady, data, token)
+        except PComputer.DoesNotExist: 
+            logger.info(f"El equipo {serial_number} aún no ha sido agregado, se procede a crearla.")
+            return self.create_computer(data, token)
         except Exception as e:
+            logger.error(f"Error inesperado: {e}")
             self._blacklist_token(token)
-            return Response({"error": f"No se pudo procesar la máquina {e}"}, 400)
-    
+            return Response({"error": f"No se pudo procesar la máquina: {e}"}, 400)
+            
     # Actualizar una computadora existente
     def update_computer(self, computer, data, token):
         # Filtrar campos protegidos
         for field in self.protected_fields:
             data.pop(field, None)
-        serializer = DataSerializer(computer, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+        serializerUpdate = ComputerSerializer(computer, data=data, partial=True)
+        if serializerUpdate.is_valid():
+            serializerUpdate.save()
             self._blacklist_token(token)
             logger.info(f" El equipo {computer.serialnumber} fue actualizado correctamente.")
             return Response({"message": "Equipo actualizado correctamente."}, 200)
         else: 
-            logger.error(f" Los datos no cumplian la estructura esperada, error: {serializer.errors}")
-            return Response(serializer.errors, status=400)  # Retornar errores de validación
+            logger.error(f" Los datos no cumplian la estructura esperada, error: {serializerUpdate.errors}")
+            return Response(serializerUpdate.errors, status=400)  # Retornar errores de validación
 
     # Crear una nueva computadora
     def create_computer(self, data, token):
