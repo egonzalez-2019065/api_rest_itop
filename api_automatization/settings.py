@@ -98,31 +98,43 @@ TEMPLATES = [
 ]
 
 LOGGING = {
-    'version': 1,
+    'version': 1, 
     'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
+    'formatters': {
+        'verbose': { 
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': { 
+            'format': '{levelname}: {message}',
+            'style': '{',
         },
     },
+
+    'handlers': {
+        'console': {  
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose', 
+        },
+    },
+
     'loggers': {
-        'django': {
+        'django': {  
             'handlers': ['console'],
             'level': 'INFO', 
             'propagate': False,
         },
-        'apscheduler': {
-            'handlers': ['console'],  
-            'level': 'INFO',
+        'apscheduler': {  
+            'handlers': ['console'],
+            'level': 'WARNING',  
             'propagate': False,
         },
-        'api_rest': {
-            'handlers': ['console'],  
-            'level': 'INFO',
-            'propagate': True,
-        }
-    }
+        'api_rest': {  
+            'handlers': ['console'],
+            'level': 'INFO',  
+            'propagate': False, 
+        },
+    },
 }
 
 
