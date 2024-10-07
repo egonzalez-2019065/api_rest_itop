@@ -56,29 +56,6 @@ python manage.py migrate
 
 Es importante hacer mención que hay una configuración necesaria para desplegar el proyecto, y esto es cambiar el **"DEBUG"** de True a False y por consecuencia hacer los pasos necesarios para que interfaz de Django siga siendo visible. 
 
-**3.4.1 Cambiar DEBUG a False:**
-   
-En el archivo `settings.py`, se debe cambiar `DEBUG = True` a `DEBUG = False`.
-
-**3.4.2 Configurar ALLOWED_HOSTS**:
-Se deben añadir los dominios o direcciones IP desde las cuales se desea que la aplicación sea accesible en la configuración `ALLOWED_HOSTS`. Por ejemplo:
-
-```python
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-```
-O si se quisiera permitir acceso sin restrcción podría utilizar:
-
-```python
-ALLOWED_HOSTS = [*]
-```
-**4.3.3 Configurar archivos estáticos:**
-
-Se debe asegurar que se tengan configurados los archivos estáticos en `settings.py`. Se debe añadir o verificar las siguientes líneas:
-
-```python
-STATIC_URL = '/static/' 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-```
 
 **4.3.4 Recrear los archivos estáticos para la interfaz gráfica de django:**
 
