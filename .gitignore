@@ -7,4 +7,6 @@ env
 # Ignora los archivos de ejecución 
 __pycache__
 
+# Ignorar los archivos estáticos
+/staticfiles
 
