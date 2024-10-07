@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from django_q.tasks import async_task
 from api_rest.tasks.task_insert_data import look
+from api_rest.enum_brand import Brand
 import logging
 
 
@@ -18,7 +19,7 @@ def put_dates(computer):
         look_response = look(computer.serialnumber)
     
     if not look_response:
-        if (computer.brand_id == 9) and computer.serialnumber != "":
+        if computer.brand_id == Brand.LENOVO.value and computer.serialnumber != "":
             driver = None
             try:
                 logger.info(f"Iniciando el proceso de scrapping para el equipo {computer.serialnumber} para obtener las fechas.")

@@ -10,32 +10,133 @@ import os
 
 
 class ComputerTaskTest(TestCase):
- # Probar tarea asíncronica
     def setUp(self):
-       Data.objects.create(
-        serialnumber='PF33X004',
-        name='Test Computer',
-        organization_id='el salvador',
-        location_id='el salvador',
-        brand_id='Lenovo',
-        model_id='Thinkpad',
-        osfamily_id='Windows',
-        os_version_id='Pro 10',
-        type='desktop',
-        cpu='Intel i7',
-        ram=16,
-        status='production',
-        description='1000 GB y 20 disponibles',
-        move2production='2024-01-01',
-        purchase_date='2024-01-01',
-        end_of_warranty='2025-01-01'
-    )
+            self.computers = [
+            Data.objects.create(
+                serialnumber='PF33XE44',
+                name='DESKTOP-0540NH8',
+                organization_id='',
+                location_id='',
+                brand_id='LENOVO',
+                model_id='20TBS25V00',
+                osfamily_id='Windows 11',
+                os_version_id='11 Business',
+                type='',
+                cpu='i5-1135G7 11th Gen Intel(R) @ 2.40GHz',
+                ram=8,
+                status='production',
+                description='La capacidad del disco es: 238 GB y le queda libre: 0.16 GB',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+            Data.objects.create(
+                serialnumber='PF33X004',
+                name='Test Computer',
+                organization_id='el salvador',
+                location_id='el salvador',
+                brand_id='Lenovo',
+                model_id='Thinkpad',
+                osfamily_id='Windows',
+                os_version_id='Pro 10',
+                type='desktop',
+                cpu='Intel i7',
+                ram=16,
+                status='production',
+                description='1000 GB y 20 disponibles',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+
+            Data.objects.create(
+                serialnumber='PF33X005',
+                name='Nicaragua Computer',
+                organization_id='nicaragua',
+                location_id='nicaragua',
+                brand_id='Lenovo',
+                model_id='Thinkpad',
+                osfamily_id='Windows',
+                os_version_id='Pro 10',
+                type='desktop',
+                cpu='Intel i5',
+                ram=8,
+                status='production',
+                description='500 GB y 100 disponibles',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+
+            Data.objects.create(
+                serialnumber='PF33X006',
+                name='Guatemala Computer',
+                organization_id='guatemala',
+                location_id='guatemala',
+                brand_id='HP',
+                model_id='Elitebook',
+                osfamily_id='Windows',
+                os_version_id='Pro 11',
+                type='laptop',
+                cpu='Intel i7',
+                ram=16,
+                status='production',
+                description='1 TB y 500 disponibles',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+
+            Data.objects.create(
+                serialnumber='PF33X007',
+                name='USA Computer',
+                organization_id='estados unidos',
+                location_id='estados unidos',
+                brand_id='Dell',
+                model_id='Latitude',
+                osfamily_id='Linux',
+                os_version_id='Ubuntu 22.04',
+                type='laptop',
+                cpu='Intel i9',
+                ram=32,
+                status='production',
+                description='2 TB y 1 TB disponibles',
+                move2production='2024-01-01',
+                purchase_date='2024-01-01',
+                end_of_warranty='2025-01-01'
+            ),
+
+            Data.objects.create(
+                serialnumber='PF33X008',
+                name='El Salvador Advanced Computer',
+                organization_id='el salvador',
+                location_id='el salvador',
+                brand_id='Asus',
+                model_id='Zenbook',
+                osfamily_id='Windows',
+                os_version_id='Pro 11',
+                type='laptop',
+                cpu='Intel i5',
+                ram=8,
+                status=None,
+                description=None,
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+        ]
     def test_task_clear(self):
+        # Llamada a la función que limpia la data original y transfiere a PComputer
         clear()
-        self.assertIsNone(Data.objects.filter(serialnumber = 'PF33X004').first())
-        self.assertIsNotNone(PComputer.objects.filter(serialnumber = 'PF33X004').first())
-        self.assertEqual(PComputer.objects.get().serialnumber, 'PF33X004')
-        self.assertEqual(PComputer.objects.get().name, 'Test Computer')
+        
+        # Verificar que todas las computadoras hayan sido eliminadas de Data y estén en PComputer
+        for computer in self.computers[:5]:
+            self.assertIsNone(Data.objects.filter(serialnumber=computer.serialnumber).first())
+            self.assertIsNotNone(PComputer.objects.filter(serialnumber=computer.serialnumber).first())
+            self.assertEqual(PComputer.objects.get(serialnumber=computer.serialnumber).name, computer.name)
+        self.assertEqual(PComputer.objects.count(), 5)
+
+
 
 class ServiceInsertTest(TestCase):
 
@@ -49,79 +150,115 @@ class ServiceInsertTest(TestCase):
         # Computadoras de prueba 
         self.computers = [
             PComputer.objects.create(
-                name='Computer 1',
-                description='',
-                organization_id=None,
-                move2production=None,
-                serialnumber='SN001',
-                location_id=None,
-                status='production',
-                brand_id=None,
-                model_id=None,
-                purchase_date=None,
-                end_of_warranty=None,
-                osfamily_id=None,
-                os_version_id=None,
-                cpu='Intel i5',
+                serialnumber='PF33XE44',
+                name='DESKTOP-0540NH8',
+                organization_id='',
+                location_id='',
+                brand_id='LENOVO',
+                model_id='20TBS25V00',
+                osfamily_id='Windows 11',
+                os_version_id='11 Business',
+                type='',
+                cpu='i5-1135G7 11th Gen Intel(R) @ 2.40GHz',
                 ram=8,
-                type='desktop'
+                status='production',
+                description='La capacidad del disco es: 238 GB y le queda libre: 0.16 GB',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
             ),
             PComputer.objects.create(
-                name='Computer 2',
-                description='',
-                organization_id=None,
-                move2production=None,
-                serialnumber='SN002',
-                location_id=None,
-                status='production',
-                brand_id=None,
-                model_id=None,
-                purchase_date=None,
-                end_of_warranty=None,
-                osfamily_id=None,
-                os_version_id=None,
-                cpu='AMD Ryzen 5',
-                ram=16,
-                type='laptop'
-            ),
-            PComputer.objects.create(
-                name='Computer 3',
-                description='',
-                organization_id=None,
-                move2production=None,
-                serialnumber='SN003',
-                location_id=None,
-                status='production',
-                brand_id=None,
-                model_id=None,
-                purchase_date=None,
-                end_of_warranty=None,
-                osfamily_id=None,
-                os_version_id=None,
-                cpu='Intel i9',
-                ram=32,
-                type='desktop'
-            ),
-            PComputer.objects.create(
-                name='Computer 4',
-                description='',
-                organization_id=None,
-                move2production=None,
-                serialnumber='SN004',
-                location_id=None,
-                status='production',
-                brand_id=None,
-                model_id=None,
-                purchase_date=None,
-                end_of_warranty=None,
-                osfamily_id=None,
-                os_version_id=None,
+                serialnumber='PF33X004',
+                name='Test Computer',
+                organization_id='el salvador',
+                location_id='el salvador',
+                brand_id='Lenovo',
+                model_id='Thinkpad',
+                osfamily_id='Windows',
+                os_version_id='Pro 10',
+                type='desktop',
                 cpu='Intel i7',
                 ram=16,
-                type='desktop'
-            )
-        ]
+                status='production',
+                description='1000 GB y 20 disponibles',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
 
+            PComputer.objects.create(
+                serialnumber='PF33X005',
+                name='Nicaragua Computer',
+                organization_id='nicaragua',
+                location_id='nicaragua',
+                brand_id='Lenovo',
+                model_id='Thinkpad',
+                osfamily_id='Windows',
+                os_version_id='Pro 10',
+                type='desktop',
+                cpu='Intel i5',
+                ram=8,
+                status='production',
+                description='500 GB y 100 disponibles',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+            PComputer.objects.create(
+                serialnumber='PF33X006',
+                name='Guatemala Computer',
+                organization_id='guatemala',
+                location_id='guatemala',
+                brand_id='HP',
+                model_id='Elitebook',
+                osfamily_id='Windows',
+                os_version_id='Pro 11',
+                type='laptop',
+                cpu='Intel i7',
+                ram=16,
+                status='production',
+                description='1 TB y 500 disponibles',
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+            PComputer.objects.create(
+                serialnumber='PF33X007',
+                name='USA Computer',
+                organization_id='estados unidos',
+                location_id='estados unidos',
+                brand_id='Dell',
+                model_id='Latitude',
+                osfamily_id='Linux',
+                os_version_id='Ubuntu 22.04',
+                type='laptop',
+                cpu='Intel i9',
+                ram=32,
+                status='production',
+                description='2 TB y 1 TB disponibles',
+                move2production='2024-01-01',
+                purchase_date='2024-01-01',
+                end_of_warranty='2025-01-01'
+            ),
+            PComputer.objects.create(
+                serialnumber='PF33X008',
+                name='El Salvador Advanced Computer',
+                organization_id='el salvador',
+                location_id='el salvador',
+                brand_id='Asus',
+                model_id='Zenbook',
+                osfamily_id='Windows',
+                os_version_id='Pro 11',
+                type='laptop',
+                cpu='Intel i5',
+                ram=8,
+                status=None,
+                description=None,
+                move2production=None,
+                purchase_date=None,
+                end_of_warranty=None
+            ),
+        ]
         # Configurar variables de entorno mock
         os.environ['SERVICE_URL'] = 'https://mock-servicio-url.com'
         os.environ['USER_SERVICE'] = 'mockuser'
@@ -151,11 +288,11 @@ class ServiceInsertTest(TestCase):
 
 
         # Verificar los valores
-        for computer in self.computers:
+        for computer in self.computers[:5]:
             self.assertTrue(HistorialPComputer.objects.filter(serialnumber=computer.serialnumber).exists())
             self.assertTrue(SerialAndService.objects.filter(serial_number=computer.serialnumber).exists())
 
-        self.assertEqual(PComputer.objects.count(), 0)
+        self.assertEqual(PComputer.objects.count(), 1)
 
     # Test para validar el funcionamiento si las computadoras no se crean en el servicio
     @patch('api_rest.tasks.task_insert_data.requests.request')
@@ -177,11 +314,11 @@ class ServiceInsertTest(TestCase):
 
 
         # Verificar los valores
-        for computer in self.computers:
+        for computer in self.computers[:5]:
             self.assertFalse(HistorialPComputer.objects.filter(serialnumber=computer.serialnumber).exists())
             self.assertFalse(SerialAndService.objects.filter(serial_number=computer.serialnumber).exists())
 
-        self.assertEqual(PComputer.objects.count(), 4)   
+        self.assertEqual(PComputer.objects.count(), 6)   
 
 
     # Test para ver si actualizan las computadoras en el servicio
@@ -211,7 +348,7 @@ class ServiceInsertTest(TestCase):
 
 
         # Verificar los datos
-        for computer in self.computers:
+        for computer in self.computers[:5]:
             self.assertTrue(HistorialPComputer.objects.filter(serialnumber=computer.serialnumber).exists())
 
-        self.assertEqual(PComputer.objects.count(), 0)   
+        self.assertEqual(PComputer.objects.count(), 1)   

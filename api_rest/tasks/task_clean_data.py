@@ -76,13 +76,13 @@ def pattern(class_name, look_to, field_value):
                         
 # Función para obtener los valores reales según el API 
 def clear():
-    computersData = Data.objects.all()
+    computersData = Data.objects.filter()[:5]
     if not computersData.exists():
             logger.warning("El proceso de limpieza de datos no fue iniciado, no hay registros.")
     for computer in computersData:
         # Obtener el dato de la locación
         if computer.location_id:
-            # upper para no sufrir casos por el case sensitive
+            # upper para no sufrir casos por el case sensitive  
             loupper = computer.organization_id.upper()
             match loupper:
                 case "ESTADOS UNIDOS":
