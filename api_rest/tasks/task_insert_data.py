@@ -59,7 +59,7 @@ def look(sn):
 
 def insert(): 
         # Obtener todas las computadoras
-        computers = PComputer.objects.all()
+        computers = PComputer.objects.filter()[:5]
 
         if not computers.exists():
             logger.warning("No se inició el proceso de ingreso de equipos al servicio por falta de registros.")
