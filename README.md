@@ -80,35 +80,27 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 ```
 
-**4.3.4 Habilitar la configuración con WhiteNoise para el servicio de los archivos estáticos:**
+**4.3.4 Recrear los archivos estáticos para la interfaz gráfica de django:**
 
-Antes de iniciar cualquier proceso, debemos instalar Whitenoise, con este comando: 
-
-```bash
-pip install whitenoise
-```
-
-WhiteNoise nos servirá para servir a los archivos estáticos sin necesidad de un servidor web adicional (Como apache), para poder habilitarlo se debe agregar esta línea en settings: 
+Al llevar esto a producción se deben hacer unos ajustes necesarios, en principio se deben configurar los hosts permitidos, por defecto están: 
 ```python
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 ```
-
-y esta línea a los middleware: 
+También se pudiera dejar el acceso libre, que no es lo recomendado, pero se harí así:
 
 ```python
-MIDDLEWARE = [
-'whitenoise.middleware.WhiteNoiseMiddleware',
-**otros middleware**
-]
+ALLOWED_HOSTS = [*]
 ```
 
-**4.3.5 Crear los archivos estáticos:**
+Esto no hace referencia a los clientes (equipos)  si no al servidor donde se hará el despliegue.
 
-Luego, se debe ejecutar el siguiente comando para recopilar los archivos estáticos:
+Para que la interfaz de Django no esté en texto plano, debe ejecutar este comando:
 
 ```bash
 python manage.py collectstatic
 ```
+
+Que este comando lo que hace es recopilar los archivos estáticos, estos los cuales permiten que la interfaz gráfica sea accesible y contenga el formato esperado, si estos no se llegasen a colectar, la interfaz se vería sin formato ni estilo, más que en texto plano. 
 
 Y con esto se ya se podría ingresar a la administración de Django de forma gráfica.
 
