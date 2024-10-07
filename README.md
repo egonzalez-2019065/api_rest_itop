@@ -54,7 +54,7 @@ python manage.py migrate
 ```
 **3.4. Aplique las migraciones:**
 
-Es importante hacer mención que pueda que haya una configuración necesaria para desplegar el proyecto, y esto es cambiar el **"DEBUG"** de TRUE a FALSE y por consecuencia hacer los pasos necesarios para que interfaz de Django siga siendo visible. 
+Es importante hacer mención que hay una configuración necesaria para desplegar el proyecto, y esto es cambiar el **"DEBUG"** de True a False y por consecuencia hacer los pasos necesarios para que interfaz de Django siga siendo visible. 
 
 **3.4.1 Cambiar DEBUG a False:**
    
@@ -79,7 +79,30 @@ Se debe asegurar que se tengan configurados los archivos estáticos en `settings
 STATIC_URL = '/static/' 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 ```
-**4.3.4 Crear los archivos estáticos:**
+
+**4.3.4 Habilitar la configuración con WhiteNoise para el servicio de los archivos estáticos:**
+
+Antes de iniciar cualquier proceso, debemos instalar Whitenoise, con este comando: 
+
+```bash
+pip install whitenoise
+```
+
+WhiteNoise nos servirá para servir a los archivos estáticos sin necesidad de un servidor web adicional (Como apache), para poder habilitarlo se debe agregar esta línea en settings: 
+```python
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+```
+
+y esta línea a los middleware: 
+
+```python
+MIDDLEWARE = [
+'whitenoise.middleware.WhiteNoiseMiddleware',
+**otros middleware**
+]
+```
+
+**4.3.5 Crear los archivos estáticos:**
 
 Luego, se debe ejecutar el siguiente comando para recopilar los archivos estáticos:
 
@@ -87,7 +110,7 @@ Luego, se debe ejecutar el siguiente comando para recopilar los archivos estáti
 python manage.py collectstatic
 ```
 
-Y con esto se ya se podría ingresar a la administración de Django de forma gráfica, para poder saber la url, se debe ingresar a `urls.py` y buscar la url especifica para ingresar a la administración.
+Y con esto se ya se podría ingresar a la administración de Django de forma gráfica.
 
 ### 4. Creación de Usuarios
 
