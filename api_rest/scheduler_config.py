@@ -3,9 +3,11 @@ import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 from django_apscheduler.jobstores import DjangoJobStore
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from django_apscheduler.models import DjangoJob
 from .tasks.task_clean_data import clear
 from .tasks.task_insert_data import insert
+from .tasks.task_cleanup import cleanup_records
 
 # Configuración para los logs
 logger = logging.getLogger(__name__)
@@ -27,8 +29,13 @@ def configure_scheduler():
         logger.info("El trabajo 'insert' existe en la base de datos, será eliminado.")
         DjangoJob.objects.filter(id='insert').delete()
 
-    if not scheduler.get_job('data') and not scheduler.get_job('insert'):
+    if DjangoJob.objects.filter(id='cleanup').exists():
+        logger.info("El trabajo 'cleanup' existe en la base de datos, será eliminado.")
+        DjangoJob.objects.filter(id='cleanup').delete()
+
+    if not scheduler.get_job('data') and not scheduler.get_job('insert') and not scheduler.get_job('cleanup'):
         try:
+            
             scheduler.add_job(
                 clear,
                 IntervalTrigger(seconds=10),
@@ -44,12 +51,20 @@ def configure_scheduler():
                 max_instances=1,
                 coalesce=True
             )
+            
+            scheduler.add_job(
+                cleanup_records,
+                CronTrigger(hour=23, minute=15),
+                id='cleanup',
+                max_instances=1,
+                coalesce=True
+            )
 
             logger.info("Tareas creadas exitosamente")
         except Exception as e:
             logger.error(f"Error al crear las tareas: {e}")
     else:
-        logger.info("Los trabajos ya fueron agregados")
+        logger.info("Los trabajo ya existían, no fueron creados")
 
     try:
         scheduler.start()
