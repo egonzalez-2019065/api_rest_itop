@@ -11,6 +11,7 @@ El proyecto se basa en Python puro para el ejecutable, mientras que la API utili
 ### Entorno de Desarrollo
 - Python 3.12
 - pip 24.2 (para la instalación de paquetes)
+- mysql workbench 8.0 (para la persistencia de los datos)
 
 ## Proceso de Implementación
 
