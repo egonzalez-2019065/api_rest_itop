@@ -14,7 +14,6 @@ services:
       - djangoq  # Asegura que el servicio djangoq esté en marcha antes de iniciar este servicio
 
   djangoq:
-    build: .  # Construye la imagen desde el Dockerfile en el directorio actual
     command: python manage.py qcluster  # Comando para ejecutar el clúster de Django Q
     volumes:
       - ./staticfiles:/app/staticfiles  # Volumen para los archivos estáticos ya generados
